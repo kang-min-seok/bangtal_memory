@@ -4,7 +4,7 @@ class ThemeCustom {
   static ThemeData lightTheme = ThemeData(
       fontFamily: "SB_agro",
       useMaterial3: true,
-      dividerColor: Colors.transparent,
+      dividerColor: const Color(0xFFF5F5F5),
       primaryColor: const Color.fromARGB(255, 38, 38, 38),
       primaryColorDark: const Color.fromARGB(255, 118, 156, 220),
       primaryColorLight: const Color.fromARGB(255, 217, 235, 255),
@@ -32,7 +32,7 @@ class ThemeCustom {
         error: Colors.red,
         onError: Colors.white,
         onBackground: Color.fromARGB(255, 0, 0, 0),
-        surface: Color(0xFFEFEFEF),
+        surface: Color(0xFFD9D9D9),
         onSurface: Color.fromARGB(255, 0, 0, 0),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
