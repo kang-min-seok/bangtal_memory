@@ -43,12 +43,17 @@ class ThemeCustom {
       ),
       expansionTileTheme: const ExpansionTileThemeData(
         iconColor: Colors.black,
-      )
+      ),
+      inputDecorationTheme: const InputDecorationTheme(
+        hintStyle: TextStyle(
+          color: Color(0xFF636363), // 원하는 hint 색상으로 설정
+        ),
+      ),
   );
   static ThemeData darkTheme = ThemeData(
       fontFamily: "SB_agro",
       useMaterial3: true,
-      dividerColor: Colors.transparent,
+      dividerColor: const Color.fromARGB(255, 50, 50, 50),
       primaryColor: Colors.white,
       primaryColorDark: const Color.fromARGB(255, 118, 156, 220),
       primaryColorLight: const Color.fromARGB(255, 145, 157, 170),
@@ -87,6 +92,11 @@ class ThemeCustom {
       ),
       expansionTileTheme: const ExpansionTileThemeData(
         iconColor: Colors.white,
-      )
+      ),
+      inputDecorationTheme: const InputDecorationTheme(
+        hintStyle: TextStyle(
+          color: Color(0xFFD9D9D9), // 원하는 hint 색상으로 설정
+        ),
+      ),
   );
 }
