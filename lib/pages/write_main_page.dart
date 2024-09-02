@@ -1,4 +1,6 @@
+import 'package:bangtal_memory/pages/record_main_page.dart';
 import 'package:bangtal_memory/pages/write_search_page.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:custom_rating_bar/custom_rating_bar.dart';
 
@@ -13,6 +15,10 @@ class _WriteMainPageState extends State<WriteMainPage> {
   final TextEditingController _themeController = TextEditingController();
   final TextEditingController _storeController = TextEditingController();
   final TextEditingController _regionController = TextEditingController();
+  final TextEditingController _dateController = TextEditingController();
+
+  // 날짜 아는지 모르는지 상태
+  bool isDateUnknown = false;
 
   // 난이도 선택 상태
   String? selectedDifficulty;
@@ -25,6 +31,7 @@ class _WriteMainPageState extends State<WriteMainPage> {
     _themeController.dispose();
     _storeController.dispose();
     _regionController.dispose();
+    _dateController.dispose();
     super.dispose();
   }
 
@@ -42,6 +49,96 @@ class _WriteMainPageState extends State<WriteMainPage> {
     });
   }
 
+  final List<String> genreList = [
+    '공포',
+    '스릴러',
+    '추리',
+    '범죄',
+    '잠입',
+    '액션',
+    '드라마',
+    '감성',
+    '로맨스',
+    '모험',
+    '코미디',
+    '판타지',
+    'SF',
+    '아케이드',
+    '역사',
+    '19금',
+    '음악',
+    '야외',
+    '기타'
+  ];
+
+  final List<String> satisfactionList = [
+    '흙길',
+    '흙풀길',
+    '풀길',
+    '풀꽃길',
+    '꽃길',
+    '꽃밭길',
+    '인생테마',
+  ];
+
+  String? selectedGenre;
+  String? selectedSatisfaction;
+
+  void _selectGenre(String genre) {
+    setState(() {
+      selectedGenre = genre;
+    });
+  }
+
+  void _selectSatisfaction(String satisfaction) {
+    setState(() {
+      selectedSatisfaction = satisfaction;
+    });
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showModalBottomSheet<DateTime>(
+      context: context,
+      builder: (BuildContext context) {
+        DateTime selectedDate = DateTime.now();
+        return Container(
+          height: 250,
+          child: Column(
+            children: [
+              Expanded(
+                child: CupertinoDatePicker(
+                  mode: CupertinoDatePickerMode.date,
+                  initialDateTime: DateTime.now(),
+                  onDateTimeChanged: (DateTime date) {
+                    selectedDate = date;
+                  },
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(selectedDate);
+                },
+                child: Text(
+                  '확인',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (picked != null && picked != DateTime.now()) {
+      setState(() {
+        _dateController.text = "${picked.year}-${picked.month}-${picked.day}";
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,7 +150,6 @@ class _WriteMainPageState extends State<WriteMainPage> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          // 주의! SingleChildScrollView는 단 하나의 자식만을 가질 수 있다.
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -149,6 +245,39 @@ class _WriteMainPageState extends State<WriteMainPage> {
                           color: Theme.of(context).colorScheme.onBackground,
                         ),
                       ),
+                      SizedBox(height: 10.0),
+                      Wrap(
+                        spacing: 8.0,
+                        runSpacing: 8.0,
+                        children: genreList.map((genre) {
+                          return ChoiceChip(
+                              label: Text(genre),
+                              selected: selectedGenre == genre,
+                              onSelected: (selected) {
+                                _selectGenre(genre);
+                              },
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20.0),
+                                // 양옆 둥글게 설정
+                                side: BorderSide(
+                                  color: selectedGenre == genre
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Theme.of(context).colorScheme.surface,
+                                ),
+                              ),
+                              backgroundColor: Colors.transparent,
+                              selectedColor: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withOpacity(0.19),
+                              labelStyle: TextStyle(
+                                color: selectedGenre == genre
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Colors.black,
+                              ),
+                              showCheckmark: false);
+                        }).toList(),
+                      ),
                       SizedBox(height: 15.0),
                       Text(
                         '만족도',
@@ -157,6 +286,39 @@ class _WriteMainPageState extends State<WriteMainPage> {
                           fontSize: 16.0,
                           color: Theme.of(context).colorScheme.onBackground,
                         ),
+                      ),
+                      SizedBox(height: 10.0),
+                      Wrap(
+                        spacing: 8.0,
+                        runSpacing: 8.0,
+                        children: satisfactionList.map((satisfaction) {
+                          return ChoiceChip(
+                              label: Text(satisfaction),
+                              selected: selectedSatisfaction == satisfaction,
+                              onSelected: (selected) {
+                                _selectSatisfaction(satisfaction);
+                              },
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20.0),
+                                // 양옆 둥글게 설정
+                                side: BorderSide(
+                                  color: selectedSatisfaction == satisfaction
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Theme.of(context).colorScheme.surface,
+                                ),
+                              ),
+                              backgroundColor: Colors.transparent,
+                              selectedColor: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withOpacity(0.19),
+                              labelStyle: TextStyle(
+                                color: selectedSatisfaction == satisfaction
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Colors.black,
+                              ),
+                              showCheckmark: false);
+                        }).toList(),
                       ),
                     ],
                   )),
@@ -233,17 +395,78 @@ class _WriteMainPageState extends State<WriteMainPage> {
                         color: Theme.of(context).colorScheme.onBackground,
                       ),
                     ),
+                    SizedBox(height: 10.0),
+                    TextField(
+                      controller: _dateController,
+                      decoration: InputDecoration(
+                        hintText: '날짜 선택',
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                            color: Theme.of(context).colorScheme.surface,
+                            width: 1.0,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                            color: Theme.of(context).colorScheme.surface,
+                            width: 1.0,
+                          ),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      readOnly: true,
+                      onTap: () {
+                        if (!isDateUnknown) {
+                          _selectDate(context);
+                        }
+                      },
+                    ),
+                    SizedBox(height: 10.0),
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: isDateUnknown,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              isDateUnknown = value ?? false;
+                              if (isDateUnknown) {
+                                _dateController.clear();
+                              }
+                            });
+                          },
+                        ),
+                        Text(
+                          '날짜 모름',
+                          style: TextStyle(
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
               SizedBox(height: 30.0),
               InkWell(
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const WriteSearchPage()),
-                  );
+                  String theme = _themeController.text;
+                  String store = _storeController.text;
+                  String region = _regionController.text;
+                  String date = _dateController.text;
+
+                  print(
+                      "작성 완료: theme: $theme, store: $store, region: $region, "
+                      "genre: $selectedGenre, satisfiction: $selectedSatisfaction, "
+                      "difficulty: $selectedDifficulty, date: $date");
+                  // Navigator.push(
+                  //   context,
+                  //   MaterialPageRoute(
+                  //       builder: (context) => const RecordMainPage()),
+                  // );
                 },
                 child: Container(
                   width: double.infinity,

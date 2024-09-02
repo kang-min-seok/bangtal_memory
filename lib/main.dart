@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'hive/escape_record.dart';
 import 'theme/theme_provider.dart';
@@ -64,6 +65,13 @@ class _MyAppState extends State<MyApp> {
               themeMode: Provider.of<ThemeProvider>(context).themeMode,
               theme: ThemeCustom.lightTheme,
               darkTheme: ThemeCustom.darkTheme,
+              localizationsDelegates: const [
+                GlobalMaterialLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [
+                Locale('ko', ''),
+              ],
               debugShowCheckedModeBanner: false,
               home: const RecordMainPage());
         });
