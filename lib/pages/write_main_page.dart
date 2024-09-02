@@ -68,7 +68,7 @@ class _WriteMainPageState extends State<WriteMainPage> {
     '19금',
     '음악',
     '야외',
-    '기타'
+    '???'
   ];
 
   final List<String> satisfactionList = [
@@ -273,7 +273,7 @@ class _WriteMainPageState extends State<WriteMainPage> {
                               labelStyle: TextStyle(
                                 color: selectedGenre == genre
                                     ? Theme.of(context).colorScheme.primary
-                                    : Colors.black,
+                                    : Theme.of(context).colorScheme.onBackground,
                               ),
                               showCheckmark: false);
                         }).toList(),
@@ -315,7 +315,7 @@ class _WriteMainPageState extends State<WriteMainPage> {
                               labelStyle: TextStyle(
                                 color: selectedSatisfaction == satisfaction
                                     ? Theme.of(context).colorScheme.primary
-                                    : Colors.black,
+                                    : Theme.of(context).colorScheme.onBackground,
                               ),
                               showCheckmark: false);
                         }).toList(),
