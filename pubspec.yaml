@@ -23,6 +23,7 @@ dependencies:
   http: ^1.2.2
   html: ^0.15.4
   custom_rating_bar: ^3.0.0
+  auto_size_text: ^3.0.0
 
 dev_dependencies:
   flutter_test:

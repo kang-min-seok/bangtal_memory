@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../hive/escape_record.dart';
 import 'setting_theme_page.dart';
 
 class SettingMainPage extends StatefulWidget {
@@ -41,6 +43,16 @@ class _SettingMainPageState extends State<SettingMainPage> {
     }
   }
 
+  Future<void> _clearEscapeRecords() async {
+    var box = await Hive.openBox<EscapeRecord>('escape_records');
+    await box.clear();
+    // 확인 메시지 표시
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('방탈출 기록이 초기화되었습니다.'),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +60,7 @@ class _SettingMainPageState extends State<SettingMainPage> {
       appBar: AppBar(
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.background,
-        title: Text("설정",style: Theme.of(context).textTheme.displayLarge),
+        title: Text("설정", style: Theme.of(context).textTheme.displayLarge),
       ),
       body: Center(
         child: Container(
@@ -61,7 +73,7 @@ class _SettingMainPageState extends State<SettingMainPage> {
                   _CustomListTile(
                     title: "테마",
                     icon: Icons.format_paint_outlined,
-                    onTap: (){
+                    onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => const SettingThemePage()),
@@ -73,6 +85,44 @@ class _SettingMainPageState extends State<SettingMainPage> {
                       themeText,
                       style: const TextStyle(fontSize: 13, color: Colors.grey),
                     ),
+                  ),
+                ],
+              ),
+              _SingleSection(
+                title: "데이터 관리",
+                children: [
+                  _CustomListTile(
+                    title: "방탈출 기록 초기화",
+                    icon: Icons.delete_forever,
+                    onTap: () async {
+                      bool? confirmed = await showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: const Text('초기화 확인'),
+                            content: const Text('정말로 방탈출 기록을 초기화하시겠습니까?'),
+                            actions: [
+                              TextButton(
+                                child: const Text('취소'),
+                                onPressed: () {
+                                  Navigator.of(context).pop(false);
+                                },
+                              ),
+                              TextButton(
+                                child: const Text('확인'),
+                                onPressed: () {
+                                  Navigator.of(context).pop(true);
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      );
+
+                      if (confirmed == true) {
+                        _clearEscapeRecords();
+                      }
+                    },
                   ),
                 ],
               ),

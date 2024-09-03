@@ -1,8 +1,10 @@
-import 'package:bangtal_memory/pages/record_main_page.dart';
 import 'package:bangtal_memory/pages/write_search_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:custom_rating_bar/custom_rating_bar.dart';
+import 'package:hive/hive.dart';
+import 'package:bangtal_memory/constants/constants.dart';
+import '../hive/escape_record.dart';
 
 class WriteMainPage extends StatefulWidget {
   const WriteMainPage({super.key});
@@ -12,8 +14,8 @@ class WriteMainPage extends StatefulWidget {
 }
 
 class _WriteMainPageState extends State<WriteMainPage> {
-  final TextEditingController _themeController = TextEditingController();
-  final TextEditingController _storeController = TextEditingController();
+  final TextEditingController _themeNameController = TextEditingController();
+  final TextEditingController _storeNameController = TextEditingController();
   final TextEditingController _regionController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
 
@@ -21,15 +23,15 @@ class _WriteMainPageState extends State<WriteMainPage> {
   bool isDateUnknown = false;
 
   // 난이도 선택 상태
-  String? selectedDifficulty;
-
+  String selectedDifficulty="";
   // 별점 선택 상태
-  double? selectedRating;
+  String selectedRating="";
+  String realDifficulty="";
 
   @override
   void dispose() {
-    _themeController.dispose();
-    _storeController.dispose();
+    _themeNameController.dispose();
+    _storeNameController.dispose();
     _regionController.dispose();
     _dateController.dispose();
     super.dispose();
@@ -38,51 +40,21 @@ class _WriteMainPageState extends State<WriteMainPage> {
   void _selectDifficulty(String difficulty) {
     setState(() {
       selectedDifficulty = difficulty;
-      selectedRating = 0; // 별점 초기화
+      selectedRating = "0"; // 별점 초기화
+      realDifficulty = difficulty;
     });
   }
 
-  void _selectRating(double rating) {
+  void _selectRating(String rating) {
     setState(() {
       selectedRating = rating;
-      selectedDifficulty = null; // 난이도 초기화
+      selectedDifficulty = ""; // 난이도 초기화
+      realDifficulty = rating;
     });
   }
 
-  final List<String> genreList = [
-    '공포',
-    '스릴러',
-    '추리',
-    '범죄',
-    '잠입',
-    '액션',
-    '드라마',
-    '감성',
-    '로맨스',
-    '모험',
-    '코미디',
-    '판타지',
-    'SF',
-    '아케이드',
-    '역사',
-    '19금',
-    '음악',
-    '야외',
-    '???'
-  ];
-
-  final List<String> satisfactionList = [
-    '흙길',
-    '흙풀길',
-    '풀길',
-    '풀꽃길',
-    '꽃길',
-    '꽃밭길',
-    '인생테마',
-  ];
-
-  String? selectedGenre;
-  String? selectedSatisfaction;
+  String selectedGenre="";
+  String selectedSatisfaction="";
 
   void _selectGenre(String genre) {
     setState(() {
@@ -139,6 +111,45 @@ class _WriteMainPageState extends State<WriteMainPage> {
     }
   }
 
+
+  void saveEscapeRecord({
+    required String themeName,
+    required String storeName,
+    required String region,
+    required String selectedGenre,
+    required String selectedSatisfaction,
+    required String selectedDifficulty,
+    required String date,
+  }) async {
+    // Hive 박스 열기 (여기서는 "escape_records"라는 이름으로 박스를 엽니다.)
+    var box = await Hive.openBox<EscapeRecord>('escape_records');
+
+    // ID는 auto-increment가 가능하니 기존 레코드의 ID를 가져오고 없으면 1로 시작
+    int id = box.isEmpty ? 1 : box.length + 1;
+
+    themeName = themeName.trim().isEmpty ? "모름" : themeName;
+    storeName = storeName.trim().isEmpty ? "모름" : storeName;
+    region = region.trim().isEmpty ? "모름" : region;
+    date = date.trim().isEmpty ? "????.??.??" : date;
+
+    // EscapeRecord 인스턴스 생성
+    var record = EscapeRecord(
+      id: id,
+      date: date,
+      storeName: storeName,
+      themeName: themeName,
+      difficulty: realDifficulty,
+      satisfaction: selectedSatisfaction,
+      genre: selectedGenre,
+      region: region,
+    );
+
+    // Hive 박스에 저장
+    await box.put(id, record);
+
+    print("데이터 저장 완료: $record");
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -167,12 +178,32 @@ class _WriteMainPageState extends State<WriteMainPage> {
                     ),
                     SizedBox(height: 10.0),
                     InkWell(
-                      onTap: () {
-                        Navigator.push(
+                      onTap: () async {
+                        // Hive 박스 열기
+                        var box = await Hive.openBox('escapeRoomData');
+
+                        // Hive에서 크롤링한 데이터를 가져오기
+                        List<dynamic> hiveData = box.get('data', defaultValue: []);
+
+                        // List<Map<String, dynamic>> 형태로 변환
+                        List<Map<String, dynamic>> data = hiveData.map((item) {
+                          return Map<String, dynamic>.from(item);
+                        }).toList();
+
+                        // WriteSearchPage로 데이터 전달 및 선택한 결과를 받아옴
+                        final selectedData = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const WriteSearchPage()),
+                            builder: (context) => WriteSearchPage(data: data), // Hive 데이터를 전달
+                          ),
                         );
+
+                        // 선택된 데이터를 각 컨트롤러에 설정
+                        if (selectedData != null) {
+                          _themeNameController.text = selectedData['theme'];
+                          _storeNameController.text = selectedData['store'];
+                          _regionController.text = selectedData['region'];
+                        }
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
@@ -213,12 +244,12 @@ class _WriteMainPageState extends State<WriteMainPage> {
               SizedBox(height: 20.0),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 10),
-                child: buildTextField('테마', '테마 이름을 입력해주세요.', _themeController),
+                child: buildTextField('테마', '테마 이름을 입력해주세요.', _themeNameController),
               ),
               SizedBox(height: 10.0),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 10),
-                child: buildTextField('매장', '매장 이름을 입력해주세요.', _storeController),
+                child: buildTextField('매장', '매장 이름을 입력해주세요.', _storeNameController),
               ),
               SizedBox(height: 10.0),
               Container(
@@ -371,7 +402,7 @@ class _WriteMainPageState extends State<WriteMainPage> {
                 filledIcon: Icons.star_rounded,
                 emptyIcon: Icons.star_border_rounded,
                 onRatingChanged: (rating) {
-                  _selectRating(rating);
+                  _selectRating(rating.toString());
                 },
                 alignment: Alignment.center,
                 size: 58, // 별점 크기를 키움
@@ -453,20 +484,21 @@ class _WriteMainPageState extends State<WriteMainPage> {
               SizedBox(height: 30.0),
               InkWell(
                 onTap: () {
-                  String theme = _themeController.text;
-                  String store = _storeController.text;
+                  String themeName = _themeNameController.text;
+                  String storeName = _storeNameController.text;
                   String region = _regionController.text;
                   String date = _dateController.text;
 
-                  print(
-                      "작성 완료: theme: $theme, store: $store, region: $region, "
-                      "genre: $selectedGenre, satisfiction: $selectedSatisfaction, "
-                      "difficulty: $selectedDifficulty, date: $date");
-                  // Navigator.push(
-                  //   context,
-                  //   MaterialPageRoute(
-                  //       builder: (context) => const RecordMainPage()),
-                  // );
+                  saveEscapeRecord(
+                    themeName: themeName,
+                    storeName: storeName,
+                    region: region,
+                    selectedGenre: selectedGenre,
+                    selectedSatisfaction: selectedSatisfaction,
+                    selectedDifficulty: selectedDifficulty,
+                    date: date,
+                  );
+                  Navigator.pop(context, true);
                 },
                 child: Container(
                   width: double.infinity,

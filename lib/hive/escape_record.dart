@@ -41,6 +41,6 @@ class EscapeRecord extends HiveObject {
 
   @override
   String toString() {
-    return 'EscapeRecord(id: $id, date: $date, storeName: $storeName, themeName: $themeName, difficulty: $difficulty, satisfaction: $satisfaction, genre: $genre)';
+    return 'EscapeRecord(id: $id, date: $date, storeName: $storeName, themeName: $themeName, difficulty: $difficulty, satisfaction: $satisfaction, genre: $genre, region: $region)';
   }
 }
