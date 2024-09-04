@@ -35,6 +35,13 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/dirt.png
+    - assets/images/flower.png
+    - assets/images/flowerGarden.png
+    - assets/images/grass.png
+    - assets/images/grassFlower.png
+    - assets/images/life.png
   fonts:
     - family: Tenada
       fonts:

@@ -2,9 +2,7 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:bangtal_memory/pages/setting_main_page.dart';
 import 'package:bangtal_memory/pages/write_main_page.dart';
 import 'package:custom_rating_bar/custom_rating_bar.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
@@ -736,9 +734,14 @@ class _RecordMainPageState extends State<RecordMainPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 이미지 (leading)
-          const CircleAvatar(
-            radius: 30,
-            backgroundColor: Colors.grey,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10), // 원형으로 자르기 위한 반경
+            child: Image.asset(
+              _getSatisfactionImage(record.satisfaction),
+              width: 60, // 이미지의 너비
+              height: 60, // 이미지의 높이
+              fit: BoxFit.cover, // 이미지를 컨테이너에 맞게 조정
+            ),
           ),
           const SizedBox(width: 12), // 이미지와 텍스트 간의 간격
           // 텍스트 및 칩
@@ -816,6 +819,27 @@ class _RecordMainPageState extends State<RecordMainPage> {
         ],
       ),
     );
+  }
+
+  String _getSatisfactionImage(String satisfaction) {
+    switch (satisfaction) {
+      case '흙길':
+        return 'assets/images/dirt.png';
+      case '흙풀길':
+        return 'assets/images/grass.png';
+      case '풀길':
+        return 'assets/images/grass.png';
+      case '풀꽃길':
+        return 'assets/images/grassFlower.png';
+      case '꽃길':
+        return 'assets/images/flower.png';
+      case '꽃밭길':
+        return 'assets/images/flowerGarden.png';
+      case '인생테마':
+        return 'assets/images/life.png';
+      default:
+        return 'assets/images/grassFlower.png'; // 기본 이미지 (만약 만족도 값이 설정되지 않은 경우)
+    }
   }
 
   Color _getDifficultyColor(String difficulty) {
