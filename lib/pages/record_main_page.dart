@@ -1,14 +1,27 @@
+// 패키지
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:bangtal_memory/pages/setting_main_page.dart';
-import 'package:bangtal_memory/pages/write_main_page.dart';
-import 'package:custom_rating_bar/custom_rating_bar.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' show parse;
+
+// 값
 import 'package:bangtal_memory/constants/constants.dart';
 import '../hive/escape_record.dart';
+
+// 페이지
+import 'package:bangtal_memory/pages/setting_main_page.dart';
+import 'package:bangtal_memory/pages/write_main_page.dart';
+
+// 위젯
+import 'package:bangtal_memory/widgets/filter_date_widget.dart';
+import 'package:bangtal_memory/widgets/filter_difficulty_widget.dart';
+import 'package:bangtal_memory/widgets/filter_genre_widget.dart';
+import 'package:bangtal_memory/widgets/filter_satisfaction_widget.dart';
+import 'package:bangtal_memory/widgets/filter_region_widget.dart';
+
 
 class RecordMainPage extends StatefulWidget {
   const RecordMainPage({super.key});
@@ -20,12 +33,16 @@ class RecordMainPage extends StatefulWidget {
 class _RecordMainPageState extends State<RecordMainPage> {
   List<Map<String, dynamic>> _data = [];
   late Box _box;
-
+  static bool _isDataLoaded = false;
   @override
   void initState() {
     super.initState();
     _box = Hive.box('escapeRoomData');
-    _loadDataFromHive();
+    // 데이터가 아직 로드되지 않았다면 데이터를 로드함
+    if (!_isDataLoaded) {
+      _loadDataFromHive();
+      _isDataLoaded = true; // 데이터가 로드된 후 플래그 설정
+    }
   }
 
   void _loadDataFromHive() {
@@ -44,7 +61,6 @@ class _RecordMainPageState extends State<RecordMainPage> {
   }
 
   Future<void> _crawlDataFromWeb() async {
-
     var url = 'https://colory.mooo.com/bba/catalogue';
     try {
       var response = await http.get(Uri.parse(url));
@@ -95,10 +111,6 @@ class _RecordMainPageState extends State<RecordMainPage> {
           print('No themes-info found');
         }
 
-        setState(() {
-          _data = data;
-        });
-
         // Hive에 데이터 저장
         _box.put('data', _data);
       } else {
@@ -106,8 +118,6 @@ class _RecordMainPageState extends State<RecordMainPage> {
       }
     } catch (e) {
       print('Error: $e');
-    } finally {
-
     }
   }
 
@@ -141,10 +151,6 @@ class _RecordMainPageState extends State<RecordMainPage> {
           if (snapshot.hasError) {
             return Center(child: Text("오류 발생: ${snapshot.error}"));
           }
-          //
-          // if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          //   return Center(child: Text("저장된 데이터가 없습니다."));
-          // }
 
           return CustomScrollView(
             controller: _scrollController,
@@ -334,362 +340,63 @@ class _RecordMainPageState extends State<RecordMainPage> {
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
-            top: Radius.circular(25.0)), // 위쪽에 borderRadius 적용
+          top: Radius.circular(25.0), // 위쪽에 borderRadius 적용
+        ),
       ),
       builder: (BuildContext context) {
         switch (filter) {
           case "날짜":
-            return _buildDateFilterOptions();
+            return DateFilterOptions(); // 날짜 필터 옵션 위젯 호출
           case "지역":
-            return _buildRegionFilterOptions();
+            return RegionFilterOptions(); // 지역 필터 옵션 위젯 호출
           case "장르":
-            return _buildGenreFilterOptions(context);
+            return GenreFilterOptions(); // 장르 필터 위젯 호출
           case "만족도":
-            return _buildSatisfactionFilterOptions(context);
+            return SatisfactionFilterOptions(); // 만족도 필터 위젯 호출
           case "난이도":
-            return _buildDifficultyFilterOptions(context);
+            return DifficultyFilterOptions(); // 난이도 필터 옵션 위젯 호출
           default:
-            return Container();
+            return Container(); // 기본값
         }
       },
-    ).then((selectedGenres) {
-      if (selectedGenres != null && selectedGenres.isNotEmpty) {
-        // 선택된 장르를 처리하는 로직 추가
-        print('Selected genres: $selectedGenres');
+    ).then((result) {
+      if (result != null) {
+        switch (filter) {
+          case "장르":
+            if (result.isNotEmpty) {
+              print('Selected genres: $result'); // 장르 필터 결과 처리
+            }
+            break;
+          case "지역":
+            if (result.isNotEmpty) {
+              print('Selected regions: $result'); // 지역 필터 결과 처리
+            }
+            break;
+          case "날짜":
+            if (result != null) {
+              print('Selected start date: ${result['startDate']}');
+              print('Selected end date: ${result['endDate']}');
+              print('Is date unknown: ${result['isDateUnknown']}');
+            }
+            break;
+          case "난이도":
+            if (result != null) {
+              print('Selected difficulties: ${result['difficulties']}');
+              print('Selected rating range: ${result['minRating']} ~ ${result['maxRating']}');
+            }
+            break;
+          case "만족도":
+            if (result.isNotEmpty) {
+              print('Selected satisfaction: $result'); // 만족도 필터 결과 처리
+            }
+            break;
+          default:
+            break;
+        }
       }
     });
   }
 
-  Widget _buildDateFilterOptions() {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text("날짜 필터 선택"),
-          // 날짜 필터 옵션 구현
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRegionFilterOptions() {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text("지역 필터 선택"),
-          // 지역 필터 옵션 구현
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGenreFilterOptions(BuildContext context) {
-    // 선택된 장르를 저장하는 리스트
-    List<String> selectedGenres = [];
-
-    return StatefulBuilder(
-      builder: (BuildContext context, StateSetter setState) {
-        return Container(
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.background,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-          width: double.infinity,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                "장르 필터 선택",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16.0),
-              Wrap(
-                spacing: 8.0,
-                runSpacing: 4.0,
-                children: genreColorMap.keys.map((genre) {
-                  return ChoiceChip(
-                      label: Text(genre),
-                      selected: selectedGenres.contains(genre),
-                      onSelected: (bool selected) {
-                        setState(() {
-                          if (selected) {
-                            selectedGenres.add(genre);
-                          } else {
-                            selectedGenres.remove(genre);
-                          }
-                        });
-                      },
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20.0),
-                        // 양옆 둥글게 설정
-                        side: BorderSide(
-                          color: selectedGenres.contains(genre)
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.surface,
-                        ),
-                      ),
-                      backgroundColor: Colors.transparent,
-                      selectedColor: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withOpacity(0.19),
-                      labelStyle: TextStyle(
-                        color: selectedGenres.contains(genre)
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.onBackground,
-                      ),
-                      showCheckmark: false);
-                }).toList(),
-              ),
-              const SizedBox(height: 24.0),
-              SizedBox(
-                width: double.infinity, // 버튼의 너비를 부모 위젯의 최대 너비로 설정
-                child: ElevatedButton(
-                  onPressed: () {
-                    // 선택된 장르를 처리하는 로직 추가
-                    Navigator.pop(context, selectedGenres);
-                  },
-                  child: const Text('선택 완료'),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildSatisfactionFilterOptions(BuildContext context) {
-    // 선택된 만족도를 저장하는 리스트
-    List<String> selectedSatisfactions = [];
-
-    return StatefulBuilder(
-      builder: (BuildContext context, StateSetter setState) {
-        return Container(
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.background,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
-          width: double.infinity,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                "만족도 필터 선택",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16.0),
-              Wrap(
-                spacing: 8.0,
-                runSpacing: 4.0,
-                children: satisfactionList.map((satisfaction) {
-                  return ChoiceChip(
-                      label: Text(satisfaction),
-                      selected: selectedSatisfactions.contains(satisfaction),
-                      onSelected: (bool selected) {
-                        setState(() {
-                          if (selected) {
-                            selectedSatisfactions.add(satisfaction);
-                          } else {
-                            selectedSatisfactions.remove(satisfaction);
-                          }
-                        });
-                      },
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20.0),
-                        // 양옆 둥글게 설정
-                        side: BorderSide(
-                          color: selectedSatisfactions.contains(satisfaction)
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.surface,
-                        ),
-                      ),
-                      backgroundColor: Colors.transparent,
-                      selectedColor: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withOpacity(0.19),
-                      labelStyle: TextStyle(
-                        color: selectedSatisfactions.contains(satisfaction)
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.onBackground,
-                      ),
-                      showCheckmark: false);
-                }).toList(),
-              ),
-              const SizedBox(height: 24.0),
-              SizedBox(
-                width: double.infinity, // 버튼의 너비를 부모 위젯의 최대 너비로 설정
-                child: ElevatedButton(
-                  onPressed: () {
-                    // 선택된 만족도를 처리하는 로직 추가
-                    Navigator.pop(context, selectedSatisfactions);
-                  },
-                  child: const Text('선택 완료'),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildDifficultyFilterOptions(BuildContext context) {
-    // 선택된 난이도를 저장하는 리스트
-    List<String> selectedDifficulties = [];
-
-    double minRating = 0.0;
-    double maxRating = 5.0;
-
-    return StatefulBuilder(
-      builder: (BuildContext context, StateSetter setState) {
-        return Container(
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.background,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          width: double.infinity,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                "난이도 필터 선택",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16.0),
-              // 난이도 버튼들
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildDifficultyButton(
-                    'Easy',
-                    selectedDifficulties.contains('Easy'),
-                        () {
-                      setState(() {
-                        if (selectedDifficulties.contains('Easy')) {
-                          selectedDifficulties.remove('Easy');
-                        } else {
-                          selectedDifficulties.add('Easy');
-                        }
-                      });
-                    },
-                  ),
-                  _buildDifficultyButton(
-                    'Normal',
-                    selectedDifficulties.contains('Normal'),
-                        () {
-                      setState(() {
-                        if (selectedDifficulties.contains('Normal')) {
-                          selectedDifficulties.remove('Normal');
-                        } else {
-                          selectedDifficulties.add('Normal');
-                        }
-                      });
-                    },
-                  ),
-                  _buildDifficultyButton(
-                    'Hard',
-                    selectedDifficulties.contains('Hard'),
-                        () {
-                      setState(() {
-                        if (selectedDifficulties.contains('Hard')) {
-                          selectedDifficulties.remove('Hard');
-                        } else {
-                          selectedDifficulties.add('Hard');
-                        }
-                      });
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20.0),
-              // 별점 범위 선택
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Column(
-                    children: [
-                      const Text('최소 난이도'),
-                      RatingBar(
-                        initialRating: minRating,
-                        maxRating: 5,
-                        isHalfAllowed: true,
-                        onRatingChanged: (rating) {
-                          setState(() {
-                            minRating = rating;
-                          });
-                        },
-                        halfFilledIcon: Icons.star_half_rounded,
-                        filledIcon: Icons.star_rounded,
-                        emptyIcon: Icons.star_border_rounded,
-                      ),
-                    ],
-                  ),
-                  const Column(
-                    children: [
-                      Text(""),
-                      Text("~"),
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      const Text('최대 난이도'),
-                      RatingBar(
-                        initialRating: maxRating,
-                        maxRating: 5,
-                        isHalfAllowed: true,
-                        onRatingChanged: (rating) {
-                          setState(() {
-                            maxRating = rating;
-                          });
-                        },
-                        halfFilledIcon: Icons.star_half_rounded,
-                        filledIcon: Icons.star_rounded,
-                        emptyIcon: Icons.star_border_rounded,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24.0),
-              SizedBox(
-                width: double.infinity, // 버튼의 너비를 부모 위젯의 최대 너비로 설정
-                child: ElevatedButton(
-                  onPressed: () {
-                    // 선택된 난이도와 별점 범위를 처리하는 로직 추가
-                    Navigator.pop(context, {
-                      'difficulties': selectedDifficulties,
-                      'minRating': minRating,
-                      'maxRating': maxRating,
-                    });
-                  },
-                  child: const Text('선택 완료'),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildDifficultyButton(String label, bool isSelected, VoidCallback onTap) {
-    return ElevatedButton(
-      onPressed: onTap,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surface, // 선택 여부에 따라 색상 변경
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.0),
-        ),
-      ),
-      child: Text(label),
-    );
-  }
 
   // Hive 데이터를 기반으로 섹션과 리스트 아이템을 구성하는 부분
   List<Widget> _buildSliverListItems(List<EscapeRecord> records) {
