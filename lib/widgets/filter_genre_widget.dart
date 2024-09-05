@@ -4,12 +4,13 @@ import '../constants/constants.dart';
 
 
 class GenreFilterOptions extends StatefulWidget {
+  const GenreFilterOptions({super.key});
   @override
   _GenreFilterOptionsState createState() => _GenreFilterOptionsState();
 }
 
 class _GenreFilterOptionsState extends State<GenreFilterOptions> {
-  List<String> selectedGenres = [];
+  static List<String> selectedGenres = [];
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +72,9 @@ class _GenreFilterOptionsState extends State<GenreFilterOptions> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.pop(context, selectedGenres);
+                Navigator.pop(context, {
+                  'selectedGenres':selectedGenres,
+                });
               },
               child: const Text('선택 완료'),
             ),

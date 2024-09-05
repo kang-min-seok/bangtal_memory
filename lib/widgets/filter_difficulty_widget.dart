@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:custom_rating_bar/custom_rating_bar.dart'; // 사용 중인 별점 패키지 import
 
 class DifficultyFilterOptions extends StatefulWidget {
+  const DifficultyFilterOptions({super.key});
   @override
   _DifficultyFilterOptionsState createState() => _DifficultyFilterOptionsState();
 }
 
 class _DifficultyFilterOptionsState extends State<DifficultyFilterOptions> {
-  List<String> selectedDifficulties = [];
-  double minRating = 0.0;
-  double maxRating = 5.0;
+  static List<String> selectedDifficulties = [];
+  static double minRating = 0.0;
+  static double maxRating = 5.0;
 
   @override
   Widget build(BuildContext context) {

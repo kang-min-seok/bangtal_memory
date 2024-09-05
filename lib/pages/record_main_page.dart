@@ -37,11 +37,11 @@ class _RecordMainPageState extends State<RecordMainPage> {
   @override
   void initState() {
     super.initState();
+    _filteredRecords = _getRecords();
     _box = Hive.box('escapeRoomData');
-    // 데이터가 아직 로드되지 않았다면 데이터를 로드함
     if (!_isDataLoaded) {
       _loadDataFromHive();
-      _isDataLoaded = true; // 데이터가 로드된 후 플래그 설정
+      _isDataLoaded = true;
     }
   }
 
@@ -108,16 +108,16 @@ class _RecordMainPageState extends State<RecordMainPage> {
             }
           }
         } else {
-          print('No themes-info found');
+          // print('No themes-info found');
         }
 
         // Hive에 데이터 저장
         _box.put('data', _data);
       } else {
-        print('Failed to load page');
+        // print('Failed to load page');
       }
     } catch (e) {
-      print('Error: $e');
+      // print('Error: $e');
     }
   }
 
@@ -125,6 +125,19 @@ class _RecordMainPageState extends State<RecordMainPage> {
   String _searchQuery = ''; // 검색어 저장
   TextEditingController _searchController = TextEditingController();
   ScrollController _scrollController = ScrollController();
+  Future<List<EscapeRecord>>? _filteredRecords;
+
+  // 필터 변수
+  DateTime? _startDate;
+  DateTime? _endDate;
+  bool _isDateUnknown = false;
+  List<String>? _selectedRegions;
+  List<String>? _selectedGenres;
+  List<String>? _selectedSatisfactions;
+  List<String>? _selectedDifficulties;
+  double? _minRating;
+  double? _maxRating;
+
 
   @override
   void dispose() {
@@ -142,7 +155,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: FutureBuilder<List<EscapeRecord>>(
-        future: _getRecords(),
+        future: _filteredRecords, // 필터링된 데이터를 가져옴
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
@@ -152,21 +165,22 @@ class _RecordMainPageState extends State<RecordMainPage> {
             return Center(child: Text("오류 발생: ${snapshot.error}"));
           }
 
+
           return CustomScrollView(
             controller: _scrollController,
             slivers: [
               SliverAppBar(
                 scrolledUnderElevation: 0,
                 floating: true,
-                collapsedHeight: 106, // 높이를 조금 줄임
+                collapsedHeight: 106,
                 backgroundColor: Theme.of(context).colorScheme.background,
                 flexibleSpace: FlexibleSpaceBar(
                   centerTitle: true,
-                  collapseMode: CollapseMode.none, // 텍스트 투명도 문제 해결
+                  collapseMode: CollapseMode.none,
                   titlePadding: EdgeInsets.zero,
                   title: Container(
-                    height: 106, // 높이를 줄여서 간격 조정
-                    padding: EdgeInsets.only(top: 5), // 패딩 조정
+                    height: 106,
+                    padding: EdgeInsets.only(top: 5),
                     width: double.infinity,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
@@ -224,19 +238,19 @@ class _RecordMainPageState extends State<RecordMainPage> {
                               GestureDetector(
                                 onTap: () {
                                   _scrollController.animateTo(
-                                    0.0, // 최상단으로 스크롤
+                                    0.0,
                                     duration: const Duration(milliseconds: 300),
                                     curve: Curves.easeInOut,
                                   );
                                 },
                                 child: Padding(
-                                  padding: const EdgeInsets.only(top: 12), // 여기에서 패딩 추가
+                                  padding: const EdgeInsets.only(top: 12),
                                   child: Text(
                                     '방탈기억',
                                     style: TextStyle(
-                                      fontFamily: "Tenada", // 원하는 폰트 패밀리 설정
-                                      fontSize: 28, // 폰트 크기 설정
-                                      color: Theme.of(context).primaryColor, // 텍스트 색상 명시
+                                      fontFamily: "Tenada",
+                                      fontSize: 28,
+                                      color: Theme.of(context).primaryColor,
                                     ),
                                   ),
                                 ),
@@ -269,33 +283,58 @@ class _RecordMainPageState extends State<RecordMainPage> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 5), // 간격을 더 좁게 설정
+                        const SizedBox(height: 5),
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Row(
                             children: [
                               const SizedBox(width: 5),
-                              for (var filter in ["날짜", "지역", "장르", "만족도", "난이도"])
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 4),
-                                  child: Chip(
-                                    label: Text(filter),
-                                    deleteIcon: const Icon(
-                                      Icons.keyboard_arrow_down_rounded,
-                                      size: 20.0, // 아이콘 크기 조절
-                                    ),
-                                    onDeleted: () {
-                                      _showFilterOptions(context, filter);
-                                    },
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(25.0), // 완전히 둥근 테두리
-                                    ),
-                                    side: BorderSide(
-                                      color: Theme.of(context).colorScheme.surface, // 테두리 색상
-                                      width: 1.0, // 테두리 두께
-                                    ),
-                                  ),
-                                ),
+                              _buildFilterChip(
+                                context: context,
+                                label: "날짜",
+                                value: _startDate != null && _endDate != null
+                                    ? "${_startDate!.year}-${_endDate!.year}"
+                                    : null,
+                                onTap: () => _showFilterOptions(context, "날짜"),
+                              ),
+                              _buildFilterChip(
+                                context: context,
+                                label: "지역",
+                                value: _selectedRegions != null &&
+                                    _selectedRegions!.isNotEmpty
+                                    ? _selectedRegions!.join(', ')
+                                    : null,
+                                onTap: () => _showFilterOptions(context, "지역"),
+                              ),
+                              _buildFilterChip(
+                                context: context,
+                                label: "장르",
+                                value: _selectedGenres != null &&
+                                    _selectedGenres!.isNotEmpty
+                                    ? _selectedGenres!.join(', ')
+                                    : null,
+                                onTap: () => _showFilterOptions(context, "장르"),
+                              ),
+                              _buildFilterChip(
+                                context: context,
+                                label: "만족도",
+                                value: _selectedSatisfactions != null &&
+                                    _selectedSatisfactions!.isNotEmpty
+                                    ? _selectedSatisfactions!.join(', ')
+                                    : null,
+                                onTap: () =>
+                                    _showFilterOptions(context, "만족도"),
+                              ),
+                              _buildFilterChip(
+                                context: context,
+                                label: "난이도",
+                                value: _selectedDifficulties != null &&
+                                    _selectedDifficulties!.isNotEmpty
+                                    ? _selectedDifficulties!.join(', ')
+                                    : null,
+                                onTap: () =>
+                                    _showFilterOptions(context, "난이도"),
+                              ),
                             ],
                           ),
                         ),
@@ -304,9 +343,6 @@ class _RecordMainPageState extends State<RecordMainPage> {
                   ),
                 ),
               ),
-              // SliverPersistentHeader(
-              //   delegate: _FilterHeaderDelegate(),
-              // ),
               SliverList(
                 delegate: SliverChildListDelegate(
                   _buildSliverListItems(snapshot.data!),
@@ -325,7 +361,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
 
           if (result == true) {
             setState(() {
-              // 화면을 리로드하여 업데이트된 데이터를 표시합니다.
+              _filteredRecords = _getRecords();
             });
           }
         },
@@ -334,69 +370,42 @@ class _RecordMainPageState extends State<RecordMainPage> {
     );
   }
 
-  void _showFilterOptions(BuildContext context, String filter) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(25.0), // 위쪽에 borderRadius 적용
+  // Chip 생성 로직
+  Widget _buildFilterChip({
+    required BuildContext context,
+    required String label,
+    String? value,
+    required VoidCallback onTap,
+  }) {
+    bool isSelected = value != null && value.isNotEmpty;
+    return Padding(
+      padding: const EdgeInsets.only(right: 4),
+      child: Chip(
+        label: Text(
+          isSelected
+              ? (value.length > 6 ? value.substring(0, 6) + '...' : value)
+              : label,
+        ),
+        backgroundColor: isSelected
+            ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+            : Theme.of(context).colorScheme.surface,
+        side: BorderSide(
+          color: isSelected
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).colorScheme.surface,
+          width: 1.0,
+        ),
+        deleteIcon: const Icon(
+          Icons.keyboard_arrow_down_rounded,
+          size: 20.0,
+        ),
+        onDeleted: onTap,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(25.0),
         ),
       ),
-      builder: (BuildContext context) {
-        switch (filter) {
-          case "날짜":
-            return DateFilterOptions(); // 날짜 필터 옵션 위젯 호출
-          case "지역":
-            return RegionFilterOptions(); // 지역 필터 옵션 위젯 호출
-          case "장르":
-            return GenreFilterOptions(); // 장르 필터 위젯 호출
-          case "만족도":
-            return SatisfactionFilterOptions(); // 만족도 필터 위젯 호출
-          case "난이도":
-            return DifficultyFilterOptions(); // 난이도 필터 옵션 위젯 호출
-          default:
-            return Container(); // 기본값
-        }
-      },
-    ).then((result) {
-      if (result != null) {
-        switch (filter) {
-          case "장르":
-            if (result.isNotEmpty) {
-              print('Selected genres: $result'); // 장르 필터 결과 처리
-            }
-            break;
-          case "지역":
-            if (result.isNotEmpty) {
-              print('Selected regions: $result'); // 지역 필터 결과 처리
-            }
-            break;
-          case "날짜":
-            if (result != null) {
-              print('Selected start date: ${result['startDate']}');
-              print('Selected end date: ${result['endDate']}');
-              print('Is date unknown: ${result['isDateUnknown']}');
-            }
-            break;
-          case "난이도":
-            if (result != null) {
-              print('Selected difficulties: ${result['difficulties']}');
-              print('Selected rating range: ${result['minRating']} ~ ${result['maxRating']}');
-            }
-            break;
-          case "만족도":
-            if (result.isNotEmpty) {
-              print('Selected satisfaction: $result'); // 만족도 필터 결과 처리
-            }
-            break;
-          default:
-            break;
-        }
-      }
-    });
+    );
   }
-
 
   // Hive 데이터를 기반으로 섹션과 리스트 아이템을 구성하는 부분
   List<Widget> _buildSliverListItems(List<EscapeRecord> records) {
@@ -566,4 +575,228 @@ class _RecordMainPageState extends State<RecordMainPage> {
     return genreColorMap[genre] ??
         Colors.grey; // 장르에 맞는 색상을 반환하고, 없으면 기본값으로 회색 사용
   }
+
+
+
+
+  void _showFilterOptions(BuildContext context, String filter) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+      ),
+      builder: (BuildContext context) {
+        switch (filter) {
+          case "날짜":
+            return const DateFilterOptions(); // 날짜 필터
+          case "지역":
+            return const RegionFilterOptions(); // 지역 필터
+          case "장르":
+            return const GenreFilterOptions(); // 장르 필터
+          case "만족도":
+            return const SatisfactionFilterOptions(); // 만족도 필터
+          case "난이도":
+            return const DifficultyFilterOptions(); // 난이도 필터
+          default:
+            return Container();
+        }
+      },
+    ).then((filterResult) {
+      if (filterResult != null) {
+        _applyFilters(filterResult);
+      }
+    });
+  }
+
+  // 필터를 적용하는 함수
+  Future<void> _applyFilters(Map<String, dynamic> filterResult) async {
+    // 기존 필터 값을 유지하고 새로운 필터 값만 덮어씌우기
+    if (filterResult.containsKey('startDate')) {
+      _startDate = filterResult['startDate'];
+    }
+    if (filterResult.containsKey('endDate')) {
+      _endDate = filterResult['endDate'];
+    }
+    _isDateUnknown = filterResult['isDateUnknown'] ?? _isDateUnknown;
+
+    // List<String> 필터 값이 덮어씌워지지 않도록 새로운 값만 추가
+    _selectedRegions = filterResult['selectedRegions'] ?? _selectedRegions;
+    _selectedGenres = filterResult['selectedGenres'] ?? _selectedGenres;
+    _selectedSatisfactions = filterResult['selectedSatisfactions'] ?? _selectedSatisfactions;
+    _selectedDifficulties = filterResult['difficulties'] ?? _selectedDifficulties;
+
+    _minRating = filterResult['minRating'] ?? _minRating;
+    _maxRating = filterResult['maxRating'] ?? _maxRating;
+
+    // 필터링된 데이터를 가져와서 _filteredRecords에 저장
+    setState(() {
+      _filteredRecords = _getFilteredRecords(
+        startDate: _startDate,
+        endDate: _endDate,
+        isDateUnknown: _isDateUnknown,
+        selectedRegions: _selectedRegions,
+        selectedGenres: _selectedGenres,
+        selectedSatisfactions: _selectedSatisfactions,
+        selectedDifficulties: _selectedDifficulties,
+        minRating: _minRating,
+        maxRating: _maxRating,
+      );
+    });
+  }
+
+
+  Future<List<EscapeRecord>> _getFilteredRecords({
+    DateTime? startDate,
+    DateTime? endDate,
+    bool isDateUnknown = false,
+    List<String>? selectedRegions,
+    List<String>? selectedGenres,
+    List<String>? selectedSatisfactions,
+    List<String>? selectedDifficulties,
+    double? minRating,
+    double? maxRating,
+  }) async {
+    var box = await Hive.openBox<EscapeRecord>('escape_records');
+    List<EscapeRecord> allRecords = box.values.toList();
+
+    print('Filtering records with the following conditions:');
+    print('Start date: $startDate, End date: $endDate, Is date unknown: $isDateUnknown');
+    print('Selected regions: $selectedRegions');
+    print('Selected genres: $selectedGenres');
+    print('Selected satisfactions: $selectedSatisfactions');
+    print('Selected difficulties: $selectedDifficulties');
+    print('Min rating: $minRating, Max rating: $maxRating');
+
+    return allRecords.where((record) {
+      // 날짜 파싱
+      DateTime? recordDate = _parseDate(record.date);
+
+      // isDateUnknown이 true일 경우 날짜가 ????.??.??이면 필터 통과
+      if (!isDateUnknown && record.date.contains('????')) {
+        // print("유효하지 않은 날짜 기록 통과: ${record.date}");
+      } else {
+        // isDateUnknown이 false이거나 날짜가 유효할 경우 정상 필터링
+        if (recordDate == null) {
+          // print("유효한 날짜가 아님, 필터링 제외: ${record.date}");
+          return false;
+        }
+
+        // 날짜 필터
+
+        if (startDate != null && recordDate.isBefore(startDate)) {
+          // print("날짜 필터 실패: $recordDate 가 $startDate 보다 이전입니다.");
+          return false;
+        } else {
+          // print("날짜 필터1 통과: $recordDate 가 $startDate 보다 이후입니다.");
+        }
+        if (endDate != null && recordDate.isAfter(endDate)) {
+          // print("날짜 필터 실패: $recordDate 가 $endDate 보다 이후입니다.");
+          return false;
+        } else {
+          // print("날짜 필터2 통과: $recordDate 가 $endDate 보다 이전입니다.");
+        }
+
+      }
+
+      // 지역 필터
+      if (selectedRegions != null && selectedRegions.isNotEmpty) {
+        if (!selectedRegions.contains(record.region)) {
+          // print("지역 필터 실패: ${record.region} 는 선택된 지역 목록에 없습니다.");
+          return false;
+        } else {
+          // print("지역 필터 통과: ${record.region} 가 선택된 지역 목록에 있습니다.");
+        }
+      } else {
+        // print("지역 필터 설정 안함");
+      }
+
+      // 장르 필터
+      if (selectedGenres != null && selectedGenres.isNotEmpty) {
+        if (!selectedGenres.contains(record.genre)) {
+          // print("장르 필터 실패: ${record.genre} 는 선택된 장르 목록에 없습니다.");
+          return false;
+        } else {
+          // print("장르 필터 통과: ${record.genre} 가 선택된 장르 목록에 있습니다.");
+        }
+      } else {
+        // print("장르 필터 설정 안함");
+      }
+
+      // 만족도 필터
+      if (selectedSatisfactions != null && selectedSatisfactions.isNotEmpty) {
+        if (!selectedSatisfactions.contains(record.satisfaction)) {
+          // print("만족도 필터 실패: ${record.satisfaction} 는 선택된 만족도 목록에 없습니다.");
+          return false;
+        } else {
+          // print("만족도 필터 통과: ${record.satisfaction} 가 선택된 만족도 목록에 있습니다.");
+        }
+      } else {
+        // print("만족도 필터 설정 안함");
+      }
+
+      // 난이도 필터
+      if (selectedDifficulties != null && selectedDifficulties.isNotEmpty) {
+        if (!selectedDifficulties.contains(record.difficulty) && ['Easy', 'Normal', 'Hard'].contains(record.difficulty)) {
+          print("난이도 필터 실패: ${record.difficulty} 는 선택된 난이도 목록에 없습니다.");
+          return false;
+        } else {
+          print("난이도 필터 통과: ${record.difficulty} 가 선택된 난이도 목록에 있습니다.");
+        }
+      } else {
+        print("난이도 필터 설정 안함");
+      }
+
+      // 난이도(별점) 필터
+      if (['Easy', 'Normal', 'Hard'].contains(record.difficulty)) {
+        print("난이도가 Easy/Normal/Hard 이므로 별점 필터 적용 안함.");
+      } else {
+        double? recordRating = double.tryParse(record.difficulty);
+        if (recordRating != null) {
+          if (minRating != null && recordRating < minRating) {
+            print("별점 필터 실패: $recordRating 가 최소 별점 $minRating 보다 낮습니다.");
+            return false;
+          } else {
+            print("별점 필터 최소 통과: $recordRating 가 최소 별점 $minRating 보다 높습니다.");
+          }
+          if (maxRating != null && recordRating > maxRating) {
+            print("별점 필터 실패: $recordRating 가 최대 별점 $maxRating 보다 높습니다.");
+            return false;
+          } else {
+            print("별점 필터 최대 통과: $recordRating 가 최대 별점 $maxRating 보다 낮습니다.");
+          }
+        } else {
+          print("난이도를 별점으로 변환할 수 없음: ${record.difficulty}");
+        }
+      }
+
+      return true; // 모든 조건을 통과한 데이터 반환
+    }).toList();
+  }
+
+  DateTime? _parseDate(String date) {
+    try {
+      // 날짜가 올바른 형식인지 확인 후 파싱
+      if (date.contains("????") || date.isEmpty) {
+        // print("날짜가 유효하지 않음: $date");
+        return null; // ????.??.??와 같은 경우 null을 반환
+      }
+
+      // 수동으로 날짜를 파싱 (YYYY-MM-DD 형식이 아닌 경우 처리)
+      List<String> parts = date.split('-');
+      if (parts.length == 3) {
+        int year = int.parse(parts[0]);
+        int month = int.parse(parts[1].padLeft(2, '0')); // 8 -> 08 처리
+        int day = int.parse(parts[2].padLeft(2, '0'));   // 9 -> 09 처리
+        return DateTime(year, month, day);
+      } else {
+        // print("날짜 파싱 오류남: 잘못된 형식 $date");
+        return null; // 잘못된 형식의 경우 null 반환
+      }
+    } catch (e) {
+      // print("날짜 파싱 오류남: $e");
+      return null; // 파싱 오류 시 null 반환
+    }
+  }
+
 }

@@ -3,13 +3,14 @@ import 'package:hive/hive.dart';
 import '../hive/escape_record.dart';
 
 class RegionFilterOptions extends StatefulWidget {
+  const RegionFilterOptions({super.key});
   @override
   _RegionFilterOptionsState createState() => _RegionFilterOptionsState();
 }
 
 class _RegionFilterOptionsState extends State<RegionFilterOptions> {
   // 선택된 지역을 저장하는 리스트
-  List<String> selectedRegions = [];
+  static List<String> selectedRegions = [];
 
   Future<List<String>> _getUniqueRegions() async {
     // Hive 박스에서 EscapeRecord를 불러오고, 중복되지 않는 지역을 추출
@@ -101,7 +102,9 @@ class _RegionFilterOptionsState extends State<RegionFilterOptions> {
                       child: ElevatedButton(
                         onPressed: () {
                           // 선택된 지역을 처리하는 로직 추가
-                          Navigator.pop(context, selectedRegions);
+                          Navigator.pop(context, {
+                            'selectedRegions': selectedRegions, // 지역을 Map으로 반환
+                          });
                         },
                         child: const Text('선택 완료'),
                       ),

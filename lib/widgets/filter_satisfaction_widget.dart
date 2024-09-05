@@ -5,13 +5,14 @@ import '../constants/constants.dart';
 
 
 class SatisfactionFilterOptions extends StatefulWidget {
+  const SatisfactionFilterOptions({super.key});
   @override
   _SatisfactionFilterOptionsState createState() =>
       _SatisfactionFilterOptionsState();
 }
 
 class _SatisfactionFilterOptionsState extends State<SatisfactionFilterOptions> {
-  List<String> selectedSatisfactions = [];
+  static List<String> selectedSatisfactions = [];
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +74,9 @@ class _SatisfactionFilterOptionsState extends State<SatisfactionFilterOptions> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.pop(context, selectedSatisfactions);
+                Navigator.pop(context, {
+                  'selectedSatisfactions': selectedSatisfactions,
+                });
               },
               child: const Text('선택 완료'),
             ),
