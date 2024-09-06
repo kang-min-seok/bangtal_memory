@@ -9,6 +9,7 @@ import 'package:html/parser.dart' show parse;
 
 // 값
 import 'package:bangtal_memory/constants/constants.dart';
+import 'package:intl/intl.dart';
 import '../hive/escape_data_service.dart';
 import '../hive/escape_record.dart';
 
@@ -42,6 +43,10 @@ class _RecordMainPageState extends State<RecordMainPage> {
 
   bool _isSearching = false; // 검색 모드 여부
   String _searchQuery = ''; // 검색어 저장
+
+  String _selectedSorting = '최신순';
+
+
   TextEditingController _searchController = TextEditingController();
   ScrollController _scrollController = ScrollController();
   Future<List<EscapeRecord>>? _filteredRecords;
@@ -203,6 +208,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
                                           icon: const Icon(Icons.search),
                                           onPressed: () {
                                             setState(() {
+                                              print("정렬기준: $_selectedSorting");
                                               _isSearching = true;
                                             });
                                           },
@@ -288,6 +294,12 @@ class _RecordMainPageState extends State<RecordMainPage> {
                 // pinned: true,
                 delegate: _HeaderDelegate(
                   totalRecords: records.length,
+                  selectedSorting: _selectedSorting,
+                  onSortingChanged: (newSorting) {
+                    setState(() {
+                      _selectedSorting = newSorting; // 새로운 값을 받으면 상태 업데이트
+                    });
+                  },
                 ),
               ),
               SliverList(
@@ -377,17 +389,65 @@ class _RecordMainPageState extends State<RecordMainPage> {
   List<Widget> _buildSliverListItems(List<EscapeRecord> records) {
     Map<String, List<EscapeRecord>> sections = {};
 
-    // storeName을 기준으로 데이터를 그룹화합니다.
-    for (var record in records) {
+    // 데이터를 검색어에 따라 필터링
+    List<EscapeRecord> filteredRecords = _searchQuery.isEmpty
+        ? records
+        : records.where((record) {
+      return record.storeName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          record.themeName.toLowerCase().contains(_searchQuery.toLowerCase());
+    }).toList();
+
+    // storeName을 기준으로 데이터를 그룹화
+    for (var record in filteredRecords) {
       if (!sections.containsKey(record.storeName)) {
         sections[record.storeName] = [];
       }
       sections[record.storeName]!.add(record);
     }
 
+    // 각 그룹을 최신순 또는 오래된순으로 정렬
+    List<MapEntry<String, List<EscapeRecord>>> sortedSections = sections.entries.toList();
+
+    // 그룹을 정렬 (각 그룹에서 최신 날짜를 기준으로 정렬)
+    sortedSections.sort((a, b) {
+      DateTime? latestDateA = _getLatestValidDate(a.value);
+      DateTime? latestDateB = _getLatestValidDate(b.value);
+
+      if (latestDateA == null && latestDateB == null) return 0;
+      if (latestDateA == null) return 1; // A 그룹의 날짜가 없으면 뒤로
+      if (latestDateB == null) return -1; // B 그룹의 날짜가 없으면 뒤로
+
+      if (_selectedSorting == '최신순') {
+        return latestDateB.compareTo(latestDateA); // 최신순
+      } else {
+        return latestDateA.compareTo(latestDateB); // 오래된순
+      }
+    });
+
     List<Widget> slivers = [];
 
-    sections.forEach((sectionTitle, items) {
+    // 정렬된 그룹을 기반으로 슬리버 리스트를 만듦
+    for (var section in sortedSections) {
+      String sectionTitle = section.key;
+      List<EscapeRecord> items = section.value;
+
+      // 그룹 내의 데이터를 최신순 또는 오래된순으로 정렬
+      items.sort((a, b) {
+        DateTime? dateA = _parseDate(a.date);
+        DateTime? dateB = _parseDate(b.date);
+
+        if (dateA == null && dateB == null) return 0;
+        if (dateA == null) return 1; // A의 날짜가 없으면 뒤로
+        if (dateB == null) return -1; // B의 날짜가 없으면 뒤로
+
+        if (_selectedSorting == '최신순') {
+          return dateB.compareTo(dateA); // 최신순
+        } else {
+          return dateA.compareTo(dateB); // 오래된순
+        }
+      });
+
+      // 섹션 타이틀 추가
       slivers.add(
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
@@ -401,13 +461,31 @@ class _RecordMainPageState extends State<RecordMainPage> {
         ),
       );
 
+      // 섹션 내 아이템 추가
       for (var item in items) {
         slivers.add(_buildListTile(item));
       }
-    });
+    }
 
     return slivers;
   }
+
+// 유효한 날짜를 찾는 함수
+  DateTime? _getLatestValidDate(List<EscapeRecord> records) {
+    DateTime? latestDate;
+
+    for (var record in records) {
+      DateTime? parsedDate = _parseDate(record.date);
+      if (parsedDate != null) {
+        if (latestDate == null || parsedDate.isAfter(latestDate)) {
+          latestDate = parsedDate;
+        }
+      }
+    }
+
+    return latestDate;
+  }
+
 
   Widget _buildListTile(EscapeRecord record) {
     return Padding(
@@ -769,57 +847,78 @@ class _RecordMainPageState extends State<RecordMainPage> {
   }
 }
 
+
 class _HeaderDelegate extends SliverPersistentHeaderDelegate {
   final int totalRecords;
+  final String selectedSorting;
+  final ValueChanged<String> onSortingChanged;
 
   _HeaderDelegate({
     required this.totalRecords,
+    required this.selectedSorting,
+    required this.onSortingChanged,
   });
 
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Row(
-      mainAxisSize: MainAxisSize.max,
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Padding(
-          padding: EdgeInsets.only(left: 8),
-          child: Text(
+    return Container(
+      color: Theme.of(context).colorScheme.background,
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center, // 텍스트와 드롭다운 높이 일치
+        children: [
+          // totalRecords 텍스트
+          Text(
             "$totalRecords번",
             style: TextStyle(
               color: Theme.of(context).colorScheme.onBackground,
               fontSize: 16,
             ),
           ),
-        ),
 
-        // DropdownButton<String>(
-        //   value: _selectedOrder,
-        //   onChanged: (String? newValue) {
-        //     if (newValue != null) {
-        //       _selectedOrder = newValue;
-        //       // 상태를 업데이트하여 선택된 값을 반영 (StatefulWidget이 필요)
-        //     }
-        //   },
-        //   items: <String>['최신순', '오래된순']
-        //       .map<DropdownMenuItem<String>>((String value) {
-        //     return DropdownMenuItem<String>(
-        //       value: value,
-        //       child: Text(value),
-        //     );
-        //   }).toList(),
-        // ),
-      ],
+          // DropdownButton의 높이를 고정하고 텍스트 크기를 제한
+          SizedBox(
+            height: 40, // DropdownButton과 텍스트의 동일한 높이를 지정
+            child: DropdownButton<String>(
+              underline: const SizedBox.shrink(),
+              value: selectedSorting,
+              onChanged: (String? newValue) {
+                if (newValue != null) {
+                  onSortingChanged(newValue); // 선택된 값이 변경되면 콜백 호출
+                }
+              },
+              items: <String>['최신순', '오래된순']
+                  .map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxHeight: 30), // 텍스트 높이 제한
+                    child: AutoSizeText(
+                      value,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onBackground,
+                      ),
+                      maxLines: 1, // 한 줄로 제한
+                      minFontSize: 12, // 최소 글자 크기
+                      overflow: TextOverflow.ellipsis, // 글자가 넘칠 경우 생략
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   @override
-  double get maxExtent => 30.0;
-
+  double get maxExtent => 40.0; // SliverPersistentHeader의 최대 높이
   @override
-  double get minExtent => 30.0;
+  double get minExtent => 40.0; // SliverPersistentHeader의 최소 높이
 
   @override
   bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
