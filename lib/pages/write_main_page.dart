@@ -1,7 +1,7 @@
 import 'package:bangtal_memory/pages/write_search_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:custom_rating_bar/custom_rating_bar.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:hive/hive.dart';
 import 'package:bangtal_memory/constants/constants.dart';
 import '../hive/escape_record.dart';
@@ -25,7 +25,7 @@ class _WriteMainPageState extends State<WriteMainPage> {
   // 난이도 선택 상태
   String selectedDifficulty="";
   // 별점 선택 상태
-  String selectedRating="";
+  String selectedRating="0";
   String realDifficulty="";
 
   @override
@@ -395,17 +395,26 @@ class _WriteMainPageState extends State<WriteMainPage> {
                 ),
               ),
               SizedBox(height: 10.0),
-              RatingBar(
-                maxRating: 5,
-                isHalfAllowed: true,
-                halfFilledIcon: Icons.star_half_rounded,
-                filledIcon: Icons.star_rounded,
-                emptyIcon: Icons.star_border_rounded,
-                onRatingChanged: (rating) {
-                  _selectRating(rating.toString());
-                },
-                alignment: Alignment.center,
-                size: 58, // 별점 크기를 키움
+              Row(
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  RatingBar.builder(
+                  initialRating: double.parse(selectedRating),
+                  minRating: 0,
+                  direction: Axis.horizontal,
+                  allowHalfRating: true,  // 반개 선택 허용
+                  itemCount: 5,
+                  itemPadding: EdgeInsets.symmetric(horizontal: 10.0),
+                  itemBuilder: (context, _) => const Icon(
+                    Icons.star_rounded,
+                    color: Colors.amber,
+                  ),
+                  onRatingUpdate: (rating) {
+                    _selectRating(rating.toString());
+                  },
+                ),
+                ]
               ),
               SizedBox(height: 20.0),
               Divider(
@@ -495,7 +504,7 @@ class _WriteMainPageState extends State<WriteMainPage> {
                     region: region,
                     selectedGenre: selectedGenre,
                     selectedSatisfaction: selectedSatisfaction,
-                    selectedDifficulty: selectedDifficulty,
+                    selectedDifficulty: realDifficulty,
                     date: date,
                   );
                   Navigator.pop(context, true);

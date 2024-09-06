@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:custom_rating_bar/custom_rating_bar.dart'; // 사용 중인 별점 패키지 import
+import 'package:flutter_rating_bar/flutter_rating_bar.dart'; // 사용 중인 별점 패키지 import
 
 class DifficultyFilterOptions extends StatefulWidget {
   const DifficultyFilterOptions({super.key});
+
   @override
-  _DifficultyFilterOptionsState createState() => _DifficultyFilterOptionsState();
+  _DifficultyFilterOptionsState createState() =>
+      _DifficultyFilterOptionsState();
 }
 
 class _DifficultyFilterOptionsState extends State<DifficultyFilterOptions> {
@@ -33,44 +35,52 @@ class _DifficultyFilterOptionsState extends State<DifficultyFilterOptions> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildDifficultyButton(
-                'Easy',
-                selectedDifficulties.contains('Easy'),
-                    () {
-                  setState(() {
-                    if (selectedDifficulties.contains('Easy')) {
-                      selectedDifficulties.remove('Easy');
-                    } else {
-                      selectedDifficulties.add('Easy');
-                    }
-                  });
-                },
+              Expanded(
+                child: _buildDifficultyButton(
+                  'Easy',
+                  selectedDifficulties.contains('Easy'),
+                  () {
+                    setState(() {
+                      if (selectedDifficulties.contains('Easy')) {
+                        selectedDifficulties.remove('Easy');
+                      } else {
+                        selectedDifficulties.add('Easy');
+                      }
+                    });
+                  },
+                ),
               ),
-              _buildDifficultyButton(
-                'Normal',
-                selectedDifficulties.contains('Normal'),
-                    () {
-                  setState(() {
-                    if (selectedDifficulties.contains('Normal')) {
-                      selectedDifficulties.remove('Normal');
-                    } else {
-                      selectedDifficulties.add('Normal');
-                    }
-                  });
-                },
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildDifficultyButton(
+                  'Normal',
+                  selectedDifficulties.contains('Normal'),
+                  () {
+                    setState(() {
+                      if (selectedDifficulties.contains('Normal')) {
+                        selectedDifficulties.remove('Normal');
+                      } else {
+                        selectedDifficulties.add('Normal');
+                      }
+                    });
+                  },
+                ),
               ),
-              _buildDifficultyButton(
-                'Hard',
-                selectedDifficulties.contains('Hard'),
-                    () {
-                  setState(() {
-                    if (selectedDifficulties.contains('Hard')) {
-                      selectedDifficulties.remove('Hard');
-                    } else {
-                      selectedDifficulties.add('Hard');
-                    }
-                  });
-                },
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildDifficultyButton(
+                  'Hard',
+                  selectedDifficulties.contains('Hard'),
+                  () {
+                    setState(() {
+                      if (selectedDifficulties.contains('Hard')) {
+                        selectedDifficulties.remove('Hard');
+                      } else {
+                        selectedDifficulties.add('Hard');
+                      }
+                    });
+                  },
+                ),
               ),
             ],
           ),
@@ -79,23 +89,45 @@ class _DifficultyFilterOptionsState extends State<DifficultyFilterOptions> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              Column(
-                children: [
-                  const Text('최소 난이도'),
-                  RatingBar(
-                    initialRating: minRating,
-                    maxRating: 5,
-                    isHalfAllowed: true,
-                    onRatingChanged: (rating) {
-                      setState(() {
-                        minRating = rating;
-                      });
-                    },
-                    halfFilledIcon: Icons.star_half_rounded,
-                    filledIcon: Icons.star_rounded,
-                    emptyIcon: Icons.star_border_rounded,
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  children: [
+                    const Text('최소 난이도'),
+                    // RatingBar(
+                    //   initialRating: minRating,
+                    //   maxRating: 5,
+                    //   isHalfAllowed: true,
+                    //   onRatingChanged: (rating) {
+                    //     setState(() {
+                    //       minRating = rating;
+                    //     });
+                    //   },
+                    //   halfFilledIcon: Icons.star_half_rounded,
+                    //   filledIcon: Icons.star_rounded,
+                    //   emptyIcon: Icons.star_border_rounded,
+                    // ),
+                    RatingBar.builder(
+                      initialRating: minRating,
+                      minRating: 0,
+                      maxRating: 5,
+                      itemSize: 30,
+                      direction: Axis.horizontal,
+                      allowHalfRating: true,
+                      // 반개 선택 허용
+                      itemCount: 5,
+                      itemPadding: const EdgeInsets.symmetric(horizontal: 2.0),
+                      itemBuilder: (context, _) => const Icon(
+                        Icons.star_rounded,
+                        color: Colors.amber,
+                      ),
+                      onRatingUpdate: (rating) {
+                        setState(() {
+                          minRating = rating;
+                        });
+                      },
+                    ),
+                  ],
+                ),
               ),
               const Column(
                 children: [
@@ -103,23 +135,45 @@ class _DifficultyFilterOptionsState extends State<DifficultyFilterOptions> {
                   Text("~"),
                 ],
               ),
-              Column(
-                children: [
-                  const Text('최대 난이도'),
-                  RatingBar(
-                    initialRating: maxRating,
-                    maxRating: 5,
-                    isHalfAllowed: true,
-                    onRatingChanged: (rating) {
-                      setState(() {
-                        maxRating = rating;
-                      });
-                    },
-                    halfFilledIcon: Icons.star_half_rounded,
-                    filledIcon: Icons.star_rounded,
-                    emptyIcon: Icons.star_border_rounded,
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  children: [
+                    const Text('최대 난이도'),
+                    // RatingBar(
+                    //   initialRating: maxRating,
+                    //   maxRating: 5,
+                    //   isHalfAllowed: true,
+                    //   onRatingChanged: (rating) {
+                    //     setState(() {
+                    //       maxRating = rating;
+                    //     });
+                    //   },
+                    //   halfFilledIcon: Icons.star_half_rounded,
+                    //   filledIcon: Icons.star_rounded,
+                    //   emptyIcon: Icons.star_border_rounded,
+                    // ),
+                    RatingBar.builder(
+                      initialRating: maxRating,
+                      minRating: 0,
+                      maxRating: 5,
+                      itemSize: 30,
+                      direction: Axis.horizontal,
+                      allowHalfRating: true,
+                      // 반개 선택 허용
+                      itemCount: 5,
+                      itemPadding: const EdgeInsets.symmetric(horizontal: 2.0),
+                      itemBuilder: (context, _) => const Icon(
+                        Icons.star_rounded,
+                        color: Colors.amber,
+                      ),
+                      onRatingUpdate: (rating) {
+                        setState(() {
+                          maxRating = rating;
+                        });
+                      },
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -143,7 +197,8 @@ class _DifficultyFilterOptionsState extends State<DifficultyFilterOptions> {
     );
   }
 
-  Widget _buildDifficultyButton(String label, bool isSelected, VoidCallback onTap) {
+  Widget _buildDifficultyButton(
+      String label, bool isSelected, VoidCallback onTap) {
     return ElevatedButton(
       onPressed: onTap,
       style: ElevatedButton.styleFrom(

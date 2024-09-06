@@ -109,7 +109,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
                       children: [
                         _isSearching
                             ? Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 5),
+                                padding: EdgeInsets.symmetric(horizontal: 12),
                                 child: SizedBox(
                                   height: 52, // 텍스트 필드의 높이를 고정하여 일관성 유지
                                   child: TextField(
@@ -119,7 +119,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
                                       hintText: '검색어를 입력해주세요',
                                       contentPadding:
                                           const EdgeInsets.symmetric(
-                                              vertical: 7.0, horizontal: 10.0),
+                                              vertical: 7.0, horizontal: 12.0),
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(15),
                                         borderSide: BorderSide.none,
@@ -162,7 +162,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
                               )
                             : Padding(
                                 padding:
-                                    const EdgeInsets.symmetric(horizontal: 8.0),
+                                    const EdgeInsets.only(left: 12.0),
                                 child: Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
@@ -237,7 +237,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
                           scrollDirection: Axis.horizontal,
                           child: Row(
                             children: [
-                              const SizedBox(width: 5),
+                              const SizedBox(width: 12),
                               _buildFilterChip(
                                 context: context,
                                 label: "날짜",
@@ -302,6 +302,21 @@ class _RecordMainPageState extends State<RecordMainPage> {
                   },
                 ),
               ),
+
+              records.isEmpty
+                ? const SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.memory_rounded, size: 70, color: Colors.grey),
+                      SizedBox(height: 20,),
+                      Text('방탈출 기록이 없습니다.', style: TextStyle(fontSize: 20, color: Colors.grey)),
+                    ],
+                  ),
+                ),
+              ) :
               SliverList(
                 delegate: SliverChildListDelegate(
                   _buildSliverListItems(snapshot.data!),
@@ -322,7 +337,10 @@ class _RecordMainPageState extends State<RecordMainPage> {
             _loadRecords();
           }
         },
-        child: const Icon(Icons.add),
+        child: const Icon(
+          Icons.add,
+          color: Colors.white
+        ),
       ),
     );
   }
@@ -456,7 +474,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
       // 섹션 타이틀 추가
       slivers.add(
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
           child: Text(
             sectionTitle,
             style: const TextStyle(
@@ -498,7 +516,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
         _showBottomSheetForRecord(record); // 꾹 눌렀을 때 BottomSheet 호출
       },
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -882,7 +900,7 @@ class _HeaderDelegate extends SliverPersistentHeaderDelegate {
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
       color: Theme.of(context).colorScheme.background,
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 12.0),
       child: Row(
         mainAxisSize: MainAxisSize.max,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,

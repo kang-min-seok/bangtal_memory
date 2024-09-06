@@ -1,7 +1,7 @@
 import 'package:bangtal_memory/pages/write_search_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:custom_rating_bar/custom_rating_bar.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:hive/hive.dart';
 import 'package:bangtal_memory/constants/constants.dart';
 import '../hive/escape_record.dart';
@@ -24,7 +24,7 @@ class _EditMainPageState extends State<EditMainPage> {
   // 상태
   bool isDateUnknown = false;
   String selectedDifficulty = "";
-  String selectedRating = "";
+  String selectedRating = "0";
   String realDifficulty = "";
   String selectedGenre = "";
   String selectedSatisfaction = "";
@@ -39,8 +39,15 @@ class _EditMainPageState extends State<EditMainPage> {
     _regionController = TextEditingController(text: widget.record.region);
     _dateController = TextEditingController(text: widget.record.date);
 
-    // 선택된 상태 초기화
-    selectedDifficulty = widget.record.difficulty;
+
+    String difficulty = widget.record.difficulty;
+    double? ratingValue = double.tryParse(difficulty);
+    if (ratingValue != null) {
+      selectedRating = ratingValue.toString();
+    } else {
+      selectedDifficulty = difficulty;
+    }
+
     selectedGenre = widget.record.genre;
     selectedSatisfaction = widget.record.satisfaction;
 
@@ -405,17 +412,39 @@ class _EditMainPageState extends State<EditMainPage> {
                 ),
               ),
               SizedBox(height: 10.0),
-              RatingBar(
-                maxRating: 5,
-                isHalfAllowed: true,
-                halfFilledIcon: Icons.star_half_rounded,
-                filledIcon: Icons.star_rounded,
-                emptyIcon: Icons.star_border_rounded,
-                onRatingChanged: (rating) {
-                  _selectRating(rating.toString());
-                },
-                alignment: Alignment.center,
-                size: 58, // 별점 크기를 키움
+              // RatingBar(
+              //   maxRating: 5,
+              //   isHalfAllowed: true,
+              //   halfFilledIcon: Icons.star_half_rounded,
+              //   filledIcon: Icons.star_rounded,
+              //   emptyIcon: Icons.star_border_rounded,
+              //   onRatingChanged: (rating) {
+              //     _selectRating(rating.toString());
+              //   },
+              //   alignment: Alignment.center,
+              //   size: 58, // 별점 크기를 키움
+              // ),
+              Row(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    RatingBar.builder(
+                      initialRating: double.parse(selectedRating),
+                      minRating: 0,
+                      direction: Axis.horizontal,
+                      allowHalfRating: true,  // 반개 선택 허용
+                      itemCount: 5,
+                      itemPadding: EdgeInsets.symmetric(horizontal: 10.0),
+                      itemBuilder: (context, _) => const Icon(
+                        Icons.star_rounded,
+                        color: Colors.amber,
+                      ),
+                      onRatingUpdate: (rating) {
+                        _selectRating(rating.toString());
+                        print(realDifficulty);
+                      },
+                    ),
+                  ]
               ),
               SizedBox(height: 20.0),
               Divider(
@@ -506,7 +535,7 @@ class _EditMainPageState extends State<EditMainPage> {
                     region: region,
                     selectedGenre: selectedGenre,
                     selectedSatisfaction: selectedSatisfaction,
-                    selectedDifficulty: selectedDifficulty,
+                    selectedDifficulty: realDifficulty,
                     date: date,
                   );
                   Navigator.pop(context, true);
