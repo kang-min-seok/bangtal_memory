@@ -24,6 +24,8 @@ import 'package:bangtal_memory/widgets/filter_genre_widget.dart';
 import 'package:bangtal_memory/widgets/filter_satisfaction_widget.dart';
 import 'package:bangtal_memory/widgets/filter_region_widget.dart';
 
+import 'edit_main_page.dart';
+
 class RecordMainPage extends StatefulWidget {
   const RecordMainPage({super.key});
 
@@ -32,20 +34,16 @@ class RecordMainPage extends StatefulWidget {
 }
 
 class _RecordMainPageState extends State<RecordMainPage> {
-
   @override
   void initState() {
     super.initState();
     _filteredRecords = _getRecords();
-
   }
-
 
   bool _isSearching = false; // 검색 모드 여부
   String _searchQuery = ''; // 검색어 저장
 
   String _selectedSorting = '최신순';
-
 
   TextEditingController _searchController = TextEditingController();
   ScrollController _scrollController = ScrollController();
@@ -111,55 +109,57 @@ class _RecordMainPageState extends State<RecordMainPage> {
                       children: [
                         _isSearching
                             ? Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 5),
-                          child: SizedBox(
-                            height: 52, // 텍스트 필드의 높이를 고정하여 일관성 유지
-                            child: TextField(
-                              controller: _searchController,
-                              autofocus: true,
-                              decoration: InputDecoration(
-                                hintText: '검색어를 입력해주세요',
-                                contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 7.0, horizontal: 10.0),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(15),
-                                  borderSide: BorderSide.none,
-                                ),
-                                filled: true,
-                                fillColor:
-                                Theme.of(context).colorScheme.surface,
-                                suffixIcon: IconButton(
-                                  icon: Icon(Icons.close),
-                                  color: Theme.of(context)
-                                      .inputDecorationTheme
-                                      .hintStyle
-                                      ?.color,
-                                  onPressed: () {
-                                    if (_searchController.text.isNotEmpty) {
-                                      _searchController.clear();
+                                padding: EdgeInsets.symmetric(horizontal: 5),
+                                child: SizedBox(
+                                  height: 52, // 텍스트 필드의 높이를 고정하여 일관성 유지
+                                  child: TextField(
+                                    controller: _searchController,
+                                    autofocus: true,
+                                    decoration: InputDecoration(
+                                      hintText: '검색어를 입력해주세요',
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              vertical: 7.0, horizontal: 10.0),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(15),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      filled: true,
+                                      fillColor:
+                                          Theme.of(context).colorScheme.surface,
+                                      suffixIcon: IconButton(
+                                        icon: Icon(Icons.close),
+                                        color: Theme.of(context)
+                                            .inputDecorationTheme
+                                            .hintStyle
+                                            ?.color,
+                                        onPressed: () {
+                                          if (_searchController
+                                              .text.isNotEmpty) {
+                                            _searchController.clear();
+                                            setState(() {
+                                              _searchQuery = '';
+                                            });
+                                          } else {
+                                            setState(() {
+                                              _isSearching = false;
+                                            });
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                    style: TextStyle(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface),
+                                    onChanged: (value) {
                                       setState(() {
-                                        _searchQuery = '';
+                                        _searchQuery = value; // 검색어 업데이트
                                       });
-                                    } else {
-                                      setState(() {
-                                        _isSearching = false;
-                                      });
-                                    }
-                                  },
+                                    },
+                                  ),
                                 ),
-                              ),
-                              style: TextStyle(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurface),
-                              onChanged: (value) {
-                                setState(() {
-                                  _searchQuery = value; // 검색어 업데이트
-                                });
-                              },
-                            ),
-                          ),
-                        )
+                              )
                             : Padding(
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 8.0),
@@ -319,9 +319,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
           );
 
           if (result == true) {
-            setState(() {
-              _filteredRecords = _getRecords();
-            });
+            _loadRecords();
           }
         },
         child: const Icon(Icons.add),
@@ -361,10 +359,13 @@ class _RecordMainPageState extends State<RecordMainPage> {
             children: [
               // 텍스트
               ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 20), // 텍스트의 최대 높이 설정
+                constraints: const BoxConstraints(maxHeight: 20),
+                // 텍스트의 최대 높이 설정
                 child: AutoSizeText(
                   isSelected
-                      ? (value!.length > 6 ? value.substring(0, 6) + '...' : value)
+                      ? (value!.length > 6
+                          ? value.substring(0, 6) + '...'
+                          : value)
                       : label,
                   style: Theme.of(context).textTheme.bodyText2,
                   maxLines: 1, // 한 줄로 제한
@@ -393,9 +394,13 @@ class _RecordMainPageState extends State<RecordMainPage> {
     List<EscapeRecord> filteredRecords = _searchQuery.isEmpty
         ? records
         : records.where((record) {
-      return record.storeName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          record.themeName.toLowerCase().contains(_searchQuery.toLowerCase());
-    }).toList();
+            return record.storeName
+                    .toLowerCase()
+                    .contains(_searchQuery.toLowerCase()) ||
+                record.themeName
+                    .toLowerCase()
+                    .contains(_searchQuery.toLowerCase());
+          }).toList();
 
     // storeName을 기준으로 데이터를 그룹화
     for (var record in filteredRecords) {
@@ -406,7 +411,8 @@ class _RecordMainPageState extends State<RecordMainPage> {
     }
 
     // 각 그룹을 최신순 또는 오래된순으로 정렬
-    List<MapEntry<String, List<EscapeRecord>>> sortedSections = sections.entries.toList();
+    List<MapEntry<String, List<EscapeRecord>>> sortedSections =
+        sections.entries.toList();
 
     // 그룹을 정렬 (각 그룹에서 최신 날짜를 기준으로 정렬)
     sortedSections.sort((a, b) {
@@ -486,9 +492,12 @@ class _RecordMainPageState extends State<RecordMainPage> {
     return latestDate;
   }
 
-
   Widget _buildListTile(EscapeRecord record) {
-    return Padding(
+    return GestureDetector(
+      onLongPress: () {
+        _showBottomSheetForRecord(record); // 꾹 눌렀을 때 BottomSheet 호출
+      },
+      child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -536,7 +545,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
                               color: _getDifficultyColor(record.difficulty),
                               borderRadius: BorderRadius.circular(20)),
                           padding:
-                          EdgeInsets.symmetric(vertical: 2, horizontal: 10),
+                              EdgeInsets.symmetric(vertical: 2, horizontal: 10),
                           child: AutoSizeText(
                             record.difficulty,
                             style: const TextStyle(color: Colors.white),
@@ -554,7 +563,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           padding:
-                          EdgeInsets.symmetric(vertical: 2, horizontal: 10),
+                              EdgeInsets.symmetric(vertical: 2, horizontal: 10),
                           child: Text(
                             record.genre,
                             style: const TextStyle(
@@ -582,9 +591,78 @@ class _RecordMainPageState extends State<RecordMainPage> {
             ),
           ],
         ),
-      );
+      ),
+    );
   }
 
+  void _showBottomSheetForRecord(EscapeRecord record) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(top: 5),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                ListTile(
+                  leading: Icon(Icons.edit),
+                  title: Text('수정하기'),
+                  onTap: () {
+                    Navigator.pop(context); // BottomSheet 닫기
+                    // 수정 후 결과를 기다림
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EditMainPage(record: record),
+                      ),
+                    ).then((isEdited) {
+                      // 수정 후 돌아왔을 때 업데이트 처리
+                      if (isEdited == true) {
+                        _loadRecords();
+                      }
+                    });
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.delete),
+                  title: Text('삭제하기'),
+                  onTap: () async {
+                    await _deleteRecord(record); // 삭제 로직 실행
+                    Navigator.pop(context); // BottomSheet 닫기
+                    _loadRecords(); // 삭제 후 데이터를 다시 로드하여 UI 업데이트
+                  },
+                ),
+              ],
+            ),
+          )
+        );
+      },
+    );
+  }
+
+  // 삭제 로직을 처리하는 함수
+  Future<void> _deleteRecord(EscapeRecord record) async {
+    var box = await Hive.openBox<EscapeRecord>('escape_records');
+    await box.delete(record.key); // Hive에서 레코드 삭제
+    print("Record deleted: ${record.themeName}"); // 삭제된 레코드 출력
+  }
+
+  void _loadRecords() {
+    setState(() {
+      _filteredRecords = _getFilteredRecords(
+        startDate: _startDate,
+        endDate: _endDate,
+        isDateUnknown: _isDateUnknown,
+        selectedRegions: _selectedRegions,
+        selectedGenres: _selectedGenres,
+        selectedSatisfactions: _selectedSatisfactions,
+        selectedDifficulties: _selectedDifficulties,
+        minRating: _minRating,
+        maxRating: _maxRating,
+      );
+    });
+  }
   String _getSatisfactionImage(String satisfaction) {
     switch (satisfaction) {
       case '흙길':
@@ -677,19 +755,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
     _maxRating = filterResult['maxRating'] ?? _maxRating;
 
     // 필터링된 데이터를 가져와서 _filteredRecords에 저장
-    setState(() {
-      _filteredRecords = _getFilteredRecords(
-        startDate: _startDate,
-        endDate: _endDate,
-        isDateUnknown: _isDateUnknown,
-        selectedRegions: _selectedRegions,
-        selectedGenres: _selectedGenres,
-        selectedSatisfactions: _selectedSatisfactions,
-        selectedDifficulties: _selectedDifficulties,
-        minRating: _minRating,
-        maxRating: _maxRating,
-      );
-    });
+    _loadRecords();
   }
 
   Future<List<EscapeRecord>> _getFilteredRecords({
@@ -706,114 +772,67 @@ class _RecordMainPageState extends State<RecordMainPage> {
     var box = await Hive.openBox<EscapeRecord>('escape_records');
     List<EscapeRecord> allRecords = box.values.toList();
 
-    print('Filtering records with the following conditions:');
-    print(
-        'Start date: $startDate, End date: $endDate, Is date unknown: $isDateUnknown');
-    print('Selected regions: $selectedRegions');
-    print('Selected genres: $selectedGenres');
-    print('Selected satisfactions: $selectedSatisfactions');
-    print('Selected difficulties: $selectedDifficulties');
-    print('Min rating: $minRating, Max rating: $maxRating');
-
     return allRecords.where((record) {
       // 날짜 파싱
       DateTime? recordDate = _parseDate(record.date);
 
       // isDateUnknown이 true일 경우 날짜가 ????.??.??이면 필터 통과
       if (!isDateUnknown && record.date.contains('????')) {
-        // print("유효하지 않은 날짜 기록 통과: ${record.date}");
+        // 필터 통과
       } else {
         // isDateUnknown이 false이거나 날짜가 유효할 경우 정상 필터링
         if (recordDate == null) {
-          // print("유효한 날짜가 아님, 필터링 제외: ${record.date}");
           return false;
         }
 
         // 날짜 필터
-
         if (startDate != null && recordDate.isBefore(startDate)) {
-          // print("날짜 필터 실패: $recordDate 가 $startDate 보다 이전입니다.");
           return false;
-        } else {
-          // print("날짜 필터1 통과: $recordDate 가 $startDate 보다 이후입니다.");
         }
         if (endDate != null && recordDate.isAfter(endDate)) {
-          // print("날짜 필터 실패: $recordDate 가 $endDate 보다 이후입니다.");
           return false;
-        } else {
-          // print("날짜 필터2 통과: $recordDate 가 $endDate 보다 이전입니다.");
         }
       }
 
       // 지역 필터
       if (selectedRegions != null && selectedRegions.isNotEmpty) {
         if (!selectedRegions.contains(record.region)) {
-          // print("지역 필터 실패: ${record.region} 는 선택된 지역 목록에 없습니다.");
           return false;
-        } else {
-          // print("지역 필터 통과: ${record.region} 가 선택된 지역 목록에 있습니다.");
         }
-      } else {
-        // print("지역 필터 설정 안함");
       }
 
       // 장르 필터
       if (selectedGenres != null && selectedGenres.isNotEmpty) {
         if (!selectedGenres.contains(record.genre)) {
-          // print("장르 필터 실패: ${record.genre} 는 선택된 장르 목록에 없습니다.");
           return false;
-        } else {
-          // print("장르 필터 통과: ${record.genre} 가 선택된 장르 목록에 있습니다.");
         }
-      } else {
-        // print("장르 필터 설정 안함");
       }
 
       // 만족도 필터
       if (selectedSatisfactions != null && selectedSatisfactions.isNotEmpty) {
         if (!selectedSatisfactions.contains(record.satisfaction)) {
-          // print("만족도 필터 실패: ${record.satisfaction} 는 선택된 만족도 목록에 없습니다.");
           return false;
-        } else {
-          // print("만족도 필터 통과: ${record.satisfaction} 가 선택된 만족도 목록에 있습니다.");
         }
-      } else {
-        // print("만족도 필터 설정 안함");
       }
 
       // 난이도 필터
       if (selectedDifficulties != null && selectedDifficulties.isNotEmpty) {
         if (!selectedDifficulties.contains(record.difficulty) &&
             ['Easy', 'Normal', 'Hard'].contains(record.difficulty)) {
-          print("난이도 필터 실패: ${record.difficulty} 는 선택된 난이도 목록에 없습니다.");
           return false;
-        } else {
-          print("난이도 필터 통과: ${record.difficulty} 가 선택된 난이도 목록에 있습니다.");
         }
-      } else {
-        print("난이도 필터 설정 안함");
       }
 
       // 난이도(별점) 필터
-      if (['Easy', 'Normal', 'Hard'].contains(record.difficulty)) {
-        print("난이도가 Easy/Normal/Hard 이므로 별점 필터 적용 안함.");
-      } else {
+      if (!['Easy', 'Normal', 'Hard'].contains(record.difficulty)) {
         double? recordRating = double.tryParse(record.difficulty);
         if (recordRating != null) {
           if (minRating != null && recordRating < minRating) {
-            print("별점 필터 실패: $recordRating 가 최소 별점 $minRating 보다 낮습니다.");
             return false;
-          } else {
-            print("별점 필터 최소 통과: $recordRating 가 최소 별점 $minRating 보다 높습니다.");
           }
           if (maxRating != null && recordRating > maxRating) {
-            print("별점 필터 실패: $recordRating 가 최대 별점 $maxRating 보다 높습니다.");
             return false;
-          } else {
-            print("별점 필터 최대 통과: $recordRating 가 최대 별점 $maxRating 보다 낮습니다.");
           }
-        } else {
-          print("난이도를 별점으로 변환할 수 없음: ${record.difficulty}");
         }
       }
 
@@ -846,7 +865,6 @@ class _RecordMainPageState extends State<RecordMainPage> {
     }
   }
 }
-
 
 class _HeaderDelegate extends SliverPersistentHeaderDelegate {
   final int totalRecords;
@@ -890,6 +908,9 @@ class _HeaderDelegate extends SliverPersistentHeaderDelegate {
                   onSortingChanged(newValue); // 선택된 값이 변경되면 콜백 호출
                 }
               },
+              icon: const Icon(
+                Icons.keyboard_arrow_down_rounded,
+              ),
               items: <String>['최신순', '오래된순']
                   .map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem<String>(

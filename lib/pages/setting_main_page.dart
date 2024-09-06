@@ -3,6 +3,8 @@ import 'package:hive/hive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../hive/escape_record.dart';
 import 'setting_theme_page.dart';
+import 'package:http/http.dart' as http;
+import 'package:html/parser.dart' show parse;
 
 class SettingMainPage extends StatefulWidget {
   const SettingMainPage({Key? key}) : super(key: key);
@@ -13,11 +15,33 @@ class SettingMainPage extends StatefulWidget {
 
 class _SettingMainPageState extends State<SettingMainPage> {
   static String themeText = "기기 테마";
+  String? _lastUpdated; // 마지막 업데이트 시간 저장
 
   @override
   void initState() {
     getThemeText();
+    _loadLastUpdatedTime();
     super.initState();
+  }
+
+  // 마지막 업데이트 시간을 SharedPreferences에서 로드
+  Future<void> _loadLastUpdatedTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _lastUpdated = prefs.getString('lastUpdated');
+    });
+  }
+
+  // 마지막 업데이트 시간을 SharedPreferences에 저장
+  Future<void> _saveLastUpdatedTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    final now = DateTime.now();
+    String formattedTime = "${now.year}-${now.month}-${now.day} ${now.hour}:${now.minute}";
+    await prefs.setString('lastUpdated', formattedTime);
+
+    setState(() {
+      _lastUpdated = formattedTime;
+    });
   }
 
   void getThemeText() async {
@@ -54,13 +78,74 @@ class _SettingMainPageState extends State<SettingMainPage> {
     );
   }
 
+  // 크롤링 후 데이터를 Hive에 덮어씌우는 함수
+  Future<void> _updateCrawledData() async {
+    var url = 'https://colory.mooo.com/bba/catalogue';
+    var box = await Hive.openBox('escapeRoomData');
+
+    try {
+      var response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        var document = parse(response.body);
+        var themesInfo = document.querySelector('.themes-info');
+        List<Map<String, dynamic>> data = [];
+
+        if (themesInfo != null) {
+          for (int i = 1; i <= 34; i++) {
+            var buttonClass = '#theme-button-$i';
+            var button = themesInfo.querySelector(buttonClass);
+
+            if (button != null) {
+              var regionName = button.querySelector('h5')?.text ?? 'No region name';
+              var table = button.querySelector('table');
+              if (table != null) {
+                var rows = table.querySelectorAll('tbody tr');
+                String storeName = '';
+                for (var row in rows) {
+                  var storeElement = row.querySelector('.info-1');
+                  if (storeElement != null) {
+                    storeName = storeElement.text;
+                  }
+                  var themeName = row.querySelector('.info-2')?.text ?? 'No theme name';
+                  var rating = row.querySelector('.info-3')?.text ?? 'No rating';
+                  var difficulty = row.querySelector('.info-4')?.text ?? 'No difficulty';
+                  var reviews = row.querySelector('.info-5')?.text ?? 'No reviews';
+
+                  data.add({
+                    'region': regionName,
+                    'store': storeName,
+                    'theme': themeName,
+                    'rating': rating,
+                    'difficulty': difficulty,
+                    'reviews': reviews,
+                  });
+                }
+              }
+            }
+          }
+        } else {
+          print('No themes-info found');
+        }
+
+        // Hive에 데이터 저장 (기존 데이터 덮어쓰기)
+        await box.put('data', data);
+        print("크롤링 성공하여 데이터 저장됨.");
+        _saveLastUpdatedTime(); // 크롤링 후 업데이트 시간을 저장
+      } else {
+        print('Failed to load page');
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.background,
-        title: Text("설정", style: Theme.of(context).textTheme.displayLarge),
+        title: Text("설정"),
       ),
       body: Center(
         child: Container(
@@ -123,6 +208,21 @@ class _SettingMainPageState extends State<SettingMainPage> {
                         _clearEscapeRecords();
                       }
                     },
+                  ),
+                  _CustomListTile(
+                    title: "테마 데이터 업데이트",
+                    icon: Icons.update,
+                    onTap: () async {
+                      // 크롤링 데이터 업데이트 수행
+                      await _updateCrawledData();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('데이터 업데이트 완료')),
+                      );
+                    },
+                    trailing: Text(
+                      _lastUpdated != null ? '$_lastUpdated' : '업데이트 기록 없음',
+                      style: const TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
                   ),
                 ],
               ),

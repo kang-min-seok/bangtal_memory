@@ -17,7 +17,7 @@ class _SettingThemePageState extends State<SettingThemePage> {
       appBar: AppBar(
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.background,
-        title: Text("테마 설정", style: Theme.of(context).textTheme.displayLarge),
+        title: Text("테마 설정"),
       ),
       body: Center(
         child: Container(

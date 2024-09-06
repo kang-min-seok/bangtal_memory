@@ -1,6 +1,7 @@
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' show parse;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class EscapeDataService {
   late Box _box;
@@ -17,6 +18,15 @@ class EscapeDataService {
     } else {
       print("데이터 있음.");
     }
+  }
+
+  // 마지막 업데이트 시간을 SharedPreferences에 저장
+  Future<void> _saveLastUpdatedTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    final now = DateTime.now();
+    String formattedTime = "${now.year}-${now.month}-${now.day} ${now.hour}:${now.minute}";
+    await prefs.setString('lastUpdated', formattedTime);
+
   }
 
   Future<void> _crawlDataFromWeb() async {
@@ -73,6 +83,7 @@ class EscapeDataService {
         // Hive에 데이터 저장
         await _box.put('data', data);
         print("크롤링 성공하여 데이터 저장됨.");
+        _saveLastUpdatedTime();
       } else {
         print('Failed to load page');
       }
