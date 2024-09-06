@@ -194,7 +194,7 @@ class _WriteMainPageState extends State<WriteMainPage> {
                         final selectedData = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => WriteSearchPage(data: data), // Hive 데이터를 전달
+                            builder: (context) => WriteSearchPage(), // Hive 데이터를 전달
                           ),
                         );
 

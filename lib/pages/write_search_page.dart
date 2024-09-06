@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 
 class WriteSearchPage extends StatefulWidget {
-  final List<Map<String, dynamic>> data;  // 크롤링된 데이터를 전달받음
-
-  const WriteSearchPage({super.key, required this.data});
+  const WriteSearchPage({super.key});
 
   @override
   _WriteSearchPageState createState() => _WriteSearchPageState();
@@ -13,21 +12,39 @@ class _WriteSearchPageState extends State<WriteSearchPage> {
   String _searchQuery = '';  // 검색어 저장
   TextEditingController _searchController = TextEditingController();
 
+  List<Map<String, dynamic>> _allData = [];
   List<Map<String, dynamic>> _filteredData = []; // 필터링된 데이터를 저장하는 리스트
 
   @override
   void initState() {
     super.initState();
-    _filteredData = widget.data; // 초기에는 전체 데이터를 보여줌
+    getData();
+    print(_allData);
+  }
+
+  Future<void> getData() async {
+    var box = await Hive.openBox('escapeRoomData');
+
+    List<dynamic> hiveData = box.get('data', defaultValue: []);
+
+    setState(() {
+      _allData = hiveData.map((item) {
+        return Map<String, dynamic>.from(item);
+      }).toList();
+
+      _filteredData = hiveData.map((item) {
+        return Map<String, dynamic>.from(item);
+      }).toList();
+    });
   }
 
   void _filterData(String query) {
     setState(() {
       _searchQuery = query;
       if (_searchQuery.isEmpty) {
-        _filteredData = widget.data; // 검색어가 비어있으면 전체 데이터를 보여줌
+        _filteredData = _allData; // 검색어가 비어있으면 전체 데이터를 보여줌
       } else {
-        _filteredData = widget.data.where((item) {
+        _filteredData = _allData.where((item) {
           return item['store'].toLowerCase().contains(_searchQuery.toLowerCase()) ||
               item['theme'].toLowerCase().contains(_searchQuery.toLowerCase());
         }).toList();
@@ -86,7 +103,7 @@ class _WriteSearchPageState extends State<WriteSearchPage> {
             title: Text(
               item['theme'],
               style: TextStyle(
-                fontWeight: FontWeight.bold
+                  fontWeight: FontWeight.bold
               ),
             ),
             shape: Border(
@@ -97,10 +114,10 @@ class _WriteSearchPageState extends State<WriteSearchPage> {
             ),
             subtitle: Text('${item['store']}'),
             trailing: Text(
-                '${item['region']}',
-                style: TextStyle(
-                  fontSize: 15,
-                ),
+              '${item['region']}',
+              style: TextStyle(
+                fontSize: 15,
+              ),
             ),
             onTap: () {
               // 선택된 데이터를 이전 페이지로 전달

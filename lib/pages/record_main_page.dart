@@ -9,6 +9,7 @@ import 'package:html/parser.dart' show parse;
 
 // 값
 import 'package:bangtal_memory/constants/constants.dart';
+import '../hive/escape_data_service.dart';
 import '../hive/escape_record.dart';
 
 // 페이지
@@ -22,7 +23,6 @@ import 'package:bangtal_memory/widgets/filter_genre_widget.dart';
 import 'package:bangtal_memory/widgets/filter_satisfaction_widget.dart';
 import 'package:bangtal_memory/widgets/filter_region_widget.dart';
 
-
 class RecordMainPage extends StatefulWidget {
   const RecordMainPage({super.key});
 
@@ -31,95 +31,14 @@ class RecordMainPage extends StatefulWidget {
 }
 
 class _RecordMainPageState extends State<RecordMainPage> {
-  List<Map<String, dynamic>> _data = [];
-  late Box _box;
-  static bool _isDataLoaded = false;
+
   @override
   void initState() {
     super.initState();
     _filteredRecords = _getRecords();
-    _box = Hive.box('escapeRoomData');
-    if (!_isDataLoaded) {
-      _loadDataFromHive();
-      _isDataLoaded = true;
-    }
+
   }
 
-  void _loadDataFromHive() {
-    final hiveData = _box.get('data') as List<dynamic>?;
-
-    if (hiveData != null && hiveData.isNotEmpty) {
-      // Hive에 데이터가 있는 경우 로드
-      setState(() {
-        _data =
-            hiveData.map((item) => Map<String, dynamic>.from(item)).toList();
-      });
-    } else {
-      // Hive에 데이터가 없거나 비어있는 경우 웹 크롤링 실행
-      _crawlDataFromWeb();
-    }
-  }
-
-  Future<void> _crawlDataFromWeb() async {
-    var url = 'https://colory.mooo.com/bba/catalogue';
-    try {
-      var response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        var document = parse(response.body);
-        var themesInfo = document.querySelector('.themes-info');
-        List<Map<String, dynamic>> data = [];
-
-        if (themesInfo != null) {
-          for (int i = 1; i <= 34; i++) {
-            var buttonClass = '#theme-button-$i';
-            var button = themesInfo.querySelector(buttonClass);
-
-            if (button != null) {
-              var regionName =
-                  button.querySelector('h5')?.text ?? 'No region name';
-              var table = button.querySelector('table');
-              if (table != null) {
-                var rows = table.querySelectorAll('tbody tr');
-                String storeName = '';
-                for (var row in rows) {
-                  var storeElement = row.querySelector('.info-1');
-                  if (storeElement != null) {
-                    storeName = storeElement.text;
-                  }
-                  var themeName =
-                      row.querySelector('.info-2')?.text ?? 'No theme name';
-                  var rating =
-                      row.querySelector('.info-3')?.text ?? 'No rating';
-                  var difficulty =
-                      row.querySelector('.info-4')?.text ?? 'No difficulty';
-                  var reviews =
-                      row.querySelector('.info-5')?.text ?? 'No reviews';
-
-                  data.add({
-                    'region': regionName,
-                    'store': storeName,
-                    'theme': themeName,
-                    'rating': rating,
-                    'difficulty': difficulty,
-                    'reviews': reviews,
-                  });
-                }
-              }
-            }
-          }
-        } else {
-          // print('No themes-info found');
-        }
-
-        // Hive에 데이터 저장
-        _box.put('data', _data);
-      } else {
-        // print('Failed to load page');
-      }
-    } catch (e) {
-      // print('Error: $e');
-    }
-  }
 
   bool _isSearching = false; // 검색 모드 여부
   String _searchQuery = ''; // 검색어 저장
@@ -137,7 +56,6 @@ class _RecordMainPageState extends State<RecordMainPage> {
   List<String>? _selectedDifficulties;
   double? _minRating;
   double? _maxRating;
-
 
   @override
   void dispose() {
@@ -165,6 +83,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
             return Center(child: Text("오류 발생: ${snapshot.error}"));
           }
 
+          final records = snapshot.data ?? [];
 
           return CustomScrollView(
             controller: _scrollController,
@@ -188,101 +107,125 @@ class _RecordMainPageState extends State<RecordMainPage> {
                         _isSearching
                             ? Padding(
                           padding: EdgeInsets.symmetric(horizontal: 5),
-                          child: TextField(
-                            controller: _searchController,
-                            autofocus: true,
-                            decoration: InputDecoration(
-                              hintText: '검색어를 입력해주세요',
-                              contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 7.0, horizontal: 10.0),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(15),
-                                borderSide: BorderSide.none,
+                          child: SizedBox(
+                            height: 52, // 텍스트 필드의 높이를 고정하여 일관성 유지
+                            child: TextField(
+                              controller: _searchController,
+                              autofocus: true,
+                              decoration: InputDecoration(
+                                hintText: '검색어를 입력해주세요',
+                                contentPadding: const EdgeInsets.symmetric(
+                                    vertical: 7.0, horizontal: 10.0),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                  borderSide: BorderSide.none,
+                                ),
+                                filled: true,
+                                fillColor:
+                                Theme.of(context).colorScheme.surface,
+                                suffixIcon: IconButton(
+                                  icon: Icon(Icons.close),
+                                  color: Theme.of(context)
+                                      .inputDecorationTheme
+                                      .hintStyle
+                                      ?.color,
+                                  onPressed: () {
+                                    if (_searchController.text.isNotEmpty) {
+                                      _searchController.clear();
+                                      setState(() {
+                                        _searchQuery = '';
+                                      });
+                                    } else {
+                                      setState(() {
+                                        _isSearching = false;
+                                      });
+                                    }
+                                  },
+                                ),
                               ),
-                              filled: true,
-                              fillColor: Theme.of(context).colorScheme.surface,
-                              suffixIcon: IconButton(
-                                icon: Icon(Icons.close),
-                                color: Theme.of(context)
-                                    .inputDecorationTheme
-                                    .hintStyle
-                                    ?.color,
-                                onPressed: () {
-                                  if (_searchController.text.isNotEmpty) {
-                                    _searchController.clear();
-                                    setState(() {
-                                      _searchQuery = '';
-                                    });
-                                  } else {
-                                    setState(() {
-                                      _isSearching = false;
-                                    });
-                                  }
-                                },
-                              ),
+                              style: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface),
+                              onChanged: (value) {
+                                setState(() {
+                                  _searchQuery = value; // 검색어 업데이트
+                                });
+                              },
                             ),
-                            style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface),
-                            onChanged: (value) {
-                              setState(() {
-                                _searchQuery = value; // 검색어 업데이트
-                              });
-                            },
                           ),
                         )
                             : Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              GestureDetector(
-                                onTap: () {
-                                  _scrollController.animateTo(
-                                    0.0,
-                                    duration: const Duration(milliseconds: 300),
-                                    curve: Curves.easeInOut,
-                                  );
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.only(top: 12),
-                                  child: Text(
-                                    '방탈기억',
-                                    style: TextStyle(
-                                      fontFamily: "Tenada",
-                                      fontSize: 28,
-                                      color: Theme.of(context).primaryColor,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8.0),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () {
+                                        _scrollController.animateTo(
+                                          0.0,
+                                          duration:
+                                              const Duration(milliseconds: 300),
+                                          curve: Curves.easeInOut,
+                                        );
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(top: 12),
+                                        child: LayoutBuilder(
+                                          builder: (context, constraints) {
+                                            return ConstrainedBox(
+                                              constraints: const BoxConstraints(
+                                                maxHeight: 40,
+                                              ),
+                                              child: AutoSizeText(
+                                                '방탈기억',
+                                                style: TextStyle(
+                                                  fontFamily: "Tenada",
+                                                  fontSize: 90, // 기본 글자 크기
+                                                  color: Theme.of(context)
+                                                      .primaryColor,
+                                                ),
+                                                maxLines: 1, // 한 줄로 제한
+                                                minFontSize:
+                                                    18, // 글자 크기의 최소값 설정
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
                                     ),
-                                  ),
+                                    Row(
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.search),
+                                          onPressed: () {
+                                            setState(() {
+                                              _isSearching = true;
+                                            });
+                                          },
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.settings),
+                                          onPressed: () {
+                                            setState(() {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      const SettingMainPage(),
+                                                ),
+                                              );
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ),
-                              Row(
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.search),
-                                    onPressed: () {
-                                      setState(() {
-                                        _isSearching = true;
-                                      });
-                                    },
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.settings),
-                                    onPressed: () {
-                                      setState(() {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                              const SettingMainPage()),
-                                        );
-                                      });
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
                         const SizedBox(height: 5),
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
@@ -301,7 +244,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
                                 context: context,
                                 label: "지역",
                                 value: _selectedRegions != null &&
-                                    _selectedRegions!.isNotEmpty
+                                        _selectedRegions!.isNotEmpty
                                     ? _selectedRegions!.join(', ')
                                     : null,
                                 onTap: () => _showFilterOptions(context, "지역"),
@@ -310,7 +253,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
                                 context: context,
                                 label: "장르",
                                 value: _selectedGenres != null &&
-                                    _selectedGenres!.isNotEmpty
+                                        _selectedGenres!.isNotEmpty
                                     ? _selectedGenres!.join(', ')
                                     : null,
                                 onTap: () => _showFilterOptions(context, "장르"),
@@ -319,21 +262,19 @@ class _RecordMainPageState extends State<RecordMainPage> {
                                 context: context,
                                 label: "만족도",
                                 value: _selectedSatisfactions != null &&
-                                    _selectedSatisfactions!.isNotEmpty
+                                        _selectedSatisfactions!.isNotEmpty
                                     ? _selectedSatisfactions!.join(', ')
                                     : null,
-                                onTap: () =>
-                                    _showFilterOptions(context, "만족도"),
+                                onTap: () => _showFilterOptions(context, "만족도"),
                               ),
                               _buildFilterChip(
                                 context: context,
                                 label: "난이도",
                                 value: _selectedDifficulties != null &&
-                                    _selectedDifficulties!.isNotEmpty
+                                        _selectedDifficulties!.isNotEmpty
                                     ? _selectedDifficulties!.join(', ')
                                     : null,
-                                onTap: () =>
-                                    _showFilterOptions(context, "난이도"),
+                                onTap: () => _showFilterOptions(context, "난이도"),
                               ),
                             ],
                           ),
@@ -341,6 +282,12 @@ class _RecordMainPageState extends State<RecordMainPage> {
                       ],
                     ),
                   ),
+                ),
+              ),
+              SliverPersistentHeader(
+                // pinned: true,
+                delegate: _HeaderDelegate(
+                  totalRecords: records.length,
                 ),
               ),
               SliverList(
@@ -378,30 +325,49 @@ class _RecordMainPageState extends State<RecordMainPage> {
     required VoidCallback onTap,
   }) {
     bool isSelected = value != null && value.isNotEmpty;
+
     return Padding(
       padding: const EdgeInsets.only(right: 4),
-      child: Chip(
-        label: Text(
-          isSelected
-              ? (value.length > 6 ? value.substring(0, 6) + '...' : value)
-              : label,
-        ),
-        backgroundColor: isSelected
-            ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
-            : Theme.of(context).colorScheme.surface,
-        side: BorderSide(
-          color: isSelected
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.surface,
-          width: 1.0,
-        ),
-        deleteIcon: const Icon(
-          Icons.keyboard_arrow_down_rounded,
-          size: 20.0,
-        ),
-        onDeleted: onTap,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(25.0),
+      child: GestureDetector(
+        onTap: onTap, // Chip을 클릭할 때 호출
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                : Theme.of(context).colorScheme.surface,
+            border: Border.all(
+              color: isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.surface,
+              width: 1.0,
+            ),
+            borderRadius: BorderRadius.circular(25.0),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 텍스트
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 20), // 텍스트의 최대 높이 설정
+                child: AutoSizeText(
+                  isSelected
+                      ? (value!.length > 6 ? value.substring(0, 6) + '...' : value)
+                      : label,
+                  style: Theme.of(context).textTheme.bodyText2,
+                  maxLines: 1, // 한 줄로 제한
+                  minFontSize: 10, // 최소 글자 크기
+                  overflow: TextOverflow.ellipsis, // 텍스트가 넘칠 경우 생략부호 처리
+                ),
+              ),
+              const SizedBox(width: 4),
+              // 삭제 아이콘 (onTap으로 대체된 delete 기능)
+              const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 20.0,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -424,7 +390,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
     sections.forEach((sectionTitle, items) {
       slivers.add(
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
           child: Text(
             sectionTitle,
             style: const TextStyle(
@@ -445,96 +411,100 @@ class _RecordMainPageState extends State<RecordMainPage> {
 
   Widget _buildListTile(EscapeRecord record) {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 이미지 (leading)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10), // 원형으로 자르기 위한 반경
-            child: Image.asset(
-              _getSatisfactionImage(record.satisfaction),
-              width: 60, // 이미지의 너비
-              height: 60, // 이미지의 높이
-              fit: BoxFit.cover, // 이미지를 컨테이너에 맞게 조정
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // 이미지 (leading)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10), // 원형으로 자르기 위한 반경
+              child: Image.asset(
+                _getSatisfactionImage(record.satisfaction),
+                width: MediaQuery.of(context).size.height * 0.085, // 이미지의 너비
+                height: MediaQuery.of(context).size.height * 0.085, // 이미지의 높이
+                fit: BoxFit.cover, // 이미지를 컨테이너에 맞게 조정
+              ),
             ),
-          ),
-          const SizedBox(width: 12), // 이미지와 텍스트 간의 간격
-          // 텍스트 및 칩
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Flexible(
-                      child: AutoSizeText(
-                        record.themeName,
-                        style: const TextStyle(
-                          fontSize: 18, // 기본 글자 크기
-                          fontWeight: FontWeight.w600,
-                        ),
-                        maxLines: 1,
-                        // 텍스트를 한 줄로 제한
-                        minFontSize: 12,
-                        // 최소 글자 크기
-                        stepGranularity: 1.0,
-                        // 글자 크기를 줄이는 단위
-                        overflow: TextOverflow
-                            .ellipsis, // 글자 크기가 줄어도 텍스트가 너무 길 경우 '...'로 처리
-                      ),
-                    ),
-                    const SizedBox(width: 8), // 타이틀과 칩 사이 간격
-                    if (record.difficulty != "")
-                      Container(
-                        decoration: BoxDecoration(
-                            color: _getDifficultyColor(record.difficulty),
-                            borderRadius: BorderRadius.circular(20)),
-                        padding:
-                            EdgeInsets.symmetric(vertical: 2, horizontal: 10),
-                        child: Text(
-                          record.difficulty,
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    const SizedBox(width: 4), // 칩 간 간격
-                    if (record.genre != "")
-                      Container(
-                        decoration: BoxDecoration(
-                          color: _getGenreColor(record.genre),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        padding:
-                            EdgeInsets.symmetric(vertical: 2, horizontal: 10),
-                        child: Text(
-                          record.genre,
+            const SizedBox(width: 12), // 이미지와 텍스트 간의 간격
+            // 텍스트 및 칩
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: AutoSizeText(
+                          record.themeName,
                           style: const TextStyle(
-                            color: Colors.white,
+                            fontSize: 18, // 기본 글자 크기
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          // 텍스트를 한 줄로 제한
+                          minFontSize: 12,
+                          // 최소 글자 크기
+                          stepGranularity: 1.0,
+                          // 글자 크기를 줄이는 단위
+                          overflow: TextOverflow
+                              .ellipsis, // 글자 크기가 줄어도 텍스트가 너무 길 경우 '...'로 처리
+                        ),
+                      ),
+                      const SizedBox(width: 8), // 타이틀과 칩 사이 간격
+                      if (record.difficulty != "")
+                        Container(
+                          decoration: BoxDecoration(
+                              color: _getDifficultyColor(record.difficulty),
+                              borderRadius: BorderRadius.circular(20)),
+                          padding:
+                          EdgeInsets.symmetric(vertical: 2, horizontal: 10),
+                          child: AutoSizeText(
+                            record.difficulty,
+                            style: const TextStyle(color: Colors.white),
+                            maxLines: 1,
+                            minFontSize: 12,
+                            stepGranularity: 1.0,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 1),
-                Text(
-                  record.storeName,
-                  style: const TextStyle(fontSize: 14),
-                ),
-                const SizedBox(height: 8), // Subtitle과 날짜 간의 간격
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: Text(
-                    "${record.region} - ${record.date}",
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      const SizedBox(width: 4), // 칩 간 간격
+                      if (record.genre != "")
+                        Container(
+                          decoration: BoxDecoration(
+                            color: _getGenreColor(record.genre),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          padding:
+                          EdgeInsets.symmetric(vertical: 2, horizontal: 10),
+                          child: Text(
+                            record.genre,
+                            style: const TextStyle(
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 1),
+                  Text(
+                    record.storeName,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  const SizedBox(height: 8), // Subtitle과 날짜 간의 간격
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: Text(
+                      "${record.region} - ${record.date}",
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
   }
 
   String _getSatisfactionImage(String satisfaction) {
@@ -575,9 +545,6 @@ class _RecordMainPageState extends State<RecordMainPage> {
     return genreColorMap[genre] ??
         Colors.grey; // 장르에 맞는 색상을 반환하고, 없으면 기본값으로 회색 사용
   }
-
-
-
 
   void _showFilterOptions(BuildContext context, String filter) {
     showModalBottomSheet(
@@ -623,8 +590,10 @@ class _RecordMainPageState extends State<RecordMainPage> {
     // List<String> 필터 값이 덮어씌워지지 않도록 새로운 값만 추가
     _selectedRegions = filterResult['selectedRegions'] ?? _selectedRegions;
     _selectedGenres = filterResult['selectedGenres'] ?? _selectedGenres;
-    _selectedSatisfactions = filterResult['selectedSatisfactions'] ?? _selectedSatisfactions;
-    _selectedDifficulties = filterResult['difficulties'] ?? _selectedDifficulties;
+    _selectedSatisfactions =
+        filterResult['selectedSatisfactions'] ?? _selectedSatisfactions;
+    _selectedDifficulties =
+        filterResult['difficulties'] ?? _selectedDifficulties;
 
     _minRating = filterResult['minRating'] ?? _minRating;
     _maxRating = filterResult['maxRating'] ?? _maxRating;
@@ -645,7 +614,6 @@ class _RecordMainPageState extends State<RecordMainPage> {
     });
   }
 
-
   Future<List<EscapeRecord>> _getFilteredRecords({
     DateTime? startDate,
     DateTime? endDate,
@@ -661,7 +629,8 @@ class _RecordMainPageState extends State<RecordMainPage> {
     List<EscapeRecord> allRecords = box.values.toList();
 
     print('Filtering records with the following conditions:');
-    print('Start date: $startDate, End date: $endDate, Is date unknown: $isDateUnknown');
+    print(
+        'Start date: $startDate, End date: $endDate, Is date unknown: $isDateUnknown');
     print('Selected regions: $selectedRegions');
     print('Selected genres: $selectedGenres');
     print('Selected satisfactions: $selectedSatisfactions');
@@ -696,7 +665,6 @@ class _RecordMainPageState extends State<RecordMainPage> {
         } else {
           // print("날짜 필터2 통과: $recordDate 가 $endDate 보다 이전입니다.");
         }
-
       }
 
       // 지역 필터
@@ -737,7 +705,8 @@ class _RecordMainPageState extends State<RecordMainPage> {
 
       // 난이도 필터
       if (selectedDifficulties != null && selectedDifficulties.isNotEmpty) {
-        if (!selectedDifficulties.contains(record.difficulty) && ['Easy', 'Normal', 'Hard'].contains(record.difficulty)) {
+        if (!selectedDifficulties.contains(record.difficulty) &&
+            ['Easy', 'Normal', 'Hard'].contains(record.difficulty)) {
           print("난이도 필터 실패: ${record.difficulty} 는 선택된 난이도 목록에 없습니다.");
           return false;
         } else {
@@ -787,7 +756,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
       if (parts.length == 3) {
         int year = int.parse(parts[0]);
         int month = int.parse(parts[1].padLeft(2, '0')); // 8 -> 08 처리
-        int day = int.parse(parts[2].padLeft(2, '0'));   // 9 -> 09 처리
+        int day = int.parse(parts[2].padLeft(2, '0')); // 9 -> 09 처리
         return DateTime(year, month, day);
       } else {
         // print("날짜 파싱 오류남: 잘못된 형식 $date");
@@ -798,5 +767,62 @@ class _RecordMainPageState extends State<RecordMainPage> {
       return null; // 파싱 오류 시 null 반환
     }
   }
+}
 
+class _HeaderDelegate extends SliverPersistentHeaderDelegate {
+  final int totalRecords;
+
+  _HeaderDelegate({
+    required this.totalRecords,
+  });
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Row(
+      mainAxisSize: MainAxisSize.max,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(left: 8),
+          child: Text(
+            "$totalRecords번",
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onBackground,
+              fontSize: 16,
+            ),
+          ),
+        ),
+
+        // DropdownButton<String>(
+        //   value: _selectedOrder,
+        //   onChanged: (String? newValue) {
+        //     if (newValue != null) {
+        //       _selectedOrder = newValue;
+        //       // 상태를 업데이트하여 선택된 값을 반영 (StatefulWidget이 필요)
+        //     }
+        //   },
+        //   items: <String>['최신순', '오래된순']
+        //       .map<DropdownMenuItem<String>>((String value) {
+        //     return DropdownMenuItem<String>(
+        //       value: value,
+        //       child: Text(value),
+        //     );
+        //   }).toList(),
+        // ),
+      ],
+    );
+  }
+
+  @override
+  double get maxExtent => 30.0;
+
+  @override
+  double get minExtent => 30.0;
+
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
+    return true;
+  }
 }
