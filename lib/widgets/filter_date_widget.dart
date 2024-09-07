@@ -62,19 +62,19 @@ class _DateFilterOptionsState extends State<DateFilterOptions> {
   }
 
   bool _isCurrentYear() {
-    final now = DateTime.now();
+    final now = DateTime.now().toUtc().add(Duration(hours: 9));
     return startDate == DateTime(now.year, 1, 1) &&
         endDate == DateTime(now.year, 12, 31);
   }
 
   bool _isLastYear() {
-    final now = DateTime.now();
+    final now = DateTime.now().toUtc().add(Duration(hours: 9));
     return startDate == DateTime(now.year - 1, 1, 1) &&
         endDate == DateTime(now.year - 1, 12, 31);
   }
 
   bool _isTwoYearsAgo() {
-    final now = DateTime.now();
+    final now = DateTime.now().toUtc().add(Duration(hours: 9));
     return startDate == DateTime(now.year - 2, 1, 1) &&
         endDate == DateTime(now.year - 2, 12, 31);
   }

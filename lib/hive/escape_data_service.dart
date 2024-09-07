@@ -23,7 +23,7 @@ class EscapeDataService {
   // 마지막 업데이트 시간을 SharedPreferences에 저장
   Future<void> _saveLastUpdatedTime() async {
     final prefs = await SharedPreferences.getInstance();
-    final now = DateTime.now();
+    final now = DateTime.now().toUtc().add(Duration(hours: 9));
     String formattedTime = "${now.year}-${now.month}-${now.day} ${now.hour}:${now.minute}";
     await prefs.setString('lastUpdated', formattedTime);
 

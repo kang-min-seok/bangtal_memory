@@ -562,15 +562,21 @@ class _RecordMainPageState extends State<RecordMainPage> {
                           decoration: BoxDecoration(
                               color: _getDifficultyColor(record.difficulty),
                               borderRadius: BorderRadius.circular(20)),
-                          padding:
-                              EdgeInsets.symmetric(vertical: 2, horizontal: 10),
-                          child: AutoSizeText(
-                            record.difficulty,
-                            style: const TextStyle(color: Colors.white),
-                            maxLines: 1,
-                            minFontSize: 12,
-                            stepGranularity: 1.0,
-                            overflow: TextOverflow.ellipsis,
+                          padding: EdgeInsets.symmetric(vertical: 2, horizontal: 10),
+                          child: Row(
+                            children: [
+                              if (double.tryParse(record.difficulty) != null) // double로 변환 가능할 때 별 아이콘 추가
+                                Icon(Icons.star_rounded, color: Colors.white, size: 16),
+                              SizedBox(width: double.tryParse(record.difficulty) != null ? 4 : 0), // 아이콘이 있을 때만 간격 추가
+                              AutoSizeText(
+                                record.difficulty,
+                                style: const TextStyle(color: Colors.white),
+                                maxLines: 1,
+                                minFontSize: 12,
+                                stepGranularity: 1.0,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
                         ),
                       const SizedBox(width: 4), // 칩 간 간격
@@ -703,13 +709,30 @@ class _RecordMainPageState extends State<RecordMainPage> {
   }
 
   Color _getDifficultyColor(String difficulty) {
+    // 우선 difficulty 값을 double로 변환 시도
+    double? difficultyValue = double.tryParse(difficulty);
+
+    if (difficultyValue != null) {
+      // double 변환에 성공한 경우
+      if (difficultyValue >= 0.0 && difficultyValue < 3.0) {
+        return Colors.green; // 0.0 ~ 3.0: Easy
+      } else if (difficultyValue >= 3.0 && difficultyValue < 4.0) {
+        return Colors.orange; // 3.0 ~ 4.0: Normal
+      } else if (difficultyValue >= 4.0 && difficultyValue <= 5.0) {
+        return Colors.red; // 4.0 ~ 5.0: Hard
+      } else {
+        return Colors.grey; // 범위를 벗어난 경우 기본 색상
+      }
+    }
+
+    // 변환 실패 시 기존 문자열 기준 색상 반환
     switch (difficulty) {
       case 'Easy':
-        return Colors.green; // Easy에 대한 색상
+        return Colors.green;
       case 'Normal':
-        return Colors.orange; // Normal에 대한 색상
+        return Colors.orange;
       case 'Hard':
-        return Colors.red; // Hard에 대한 색상
+        return Colors.red;
       default:
         return Colors.grey; // 알 수 없는 경우 기본 색상
     }
