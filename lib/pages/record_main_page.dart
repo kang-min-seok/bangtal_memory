@@ -688,7 +688,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
       case '흙길':
         return 'assets/images/dirt.png';
       case '흙풀길':
-        return 'assets/images/grass.png';
+        return 'assets/images/dirtGrass.png';
       case '풀길':
         return 'assets/images/grass.png';
       case '풀꽃길':
