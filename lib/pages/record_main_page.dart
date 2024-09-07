@@ -90,14 +90,14 @@ class _RecordMainPageState extends State<RecordMainPage> {
               SliverAppBar(
                 scrolledUnderElevation: 0,
                 floating: true,
-                collapsedHeight: 106,
+                collapsedHeight: 96,
                 backgroundColor: Theme.of(context).colorScheme.background,
                 flexibleSpace: FlexibleSpaceBar(
                   centerTitle: true,
                   collapseMode: CollapseMode.none,
                   titlePadding: EdgeInsets.zero,
                   title: Container(
-                    height: 106,
+                    height: 109,
                     padding: EdgeInsets.only(top: 5),
                     width: double.infinity,
                     child: Column(
@@ -105,9 +105,9 @@ class _RecordMainPageState extends State<RecordMainPage> {
                       children: [
                         _isSearching
                             ? Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 12),
+                                padding: EdgeInsets.fromLTRB(12, 10, 12, 3),
                                 child: SizedBox(
-                                  height: 52, // 텍스트 필드의 높이를 고정하여 일관성 유지
+                                  height: 43, // 텍스트 필드의 높이를 고정하여 일관성 유지
                                   child: TextField(
                                     controller: _searchController,
                                     autofocus: true,
@@ -115,7 +115,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
                                       hintText: '검색어를 입력해주세요',
                                       contentPadding:
                                           const EdgeInsets.symmetric(
-                                              vertical: 7.0, horizontal: 12.0),
+                                              vertical: 1.0, horizontal: 12.0),
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(15),
                                         borderSide: BorderSide.none,
@@ -156,76 +156,84 @@ class _RecordMainPageState extends State<RecordMainPage> {
                                   ),
                                 ),
                               )
-                            : Padding(
-                                padding:
-                                    const EdgeInsets.only(left: 12.0),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () {
-                                        _scrollController.animateTo(
-                                          0.0,
-                                          duration:
-                                              const Duration(milliseconds: 300),
-                                          curve: Curves.easeInOut,
-                                        );
-                                      },
-                                      child: Padding(
-                                        padding: const EdgeInsets.only(top: 12),
-                                        child: LayoutBuilder(
-                                          builder: (context, constraints) {
-                                            return ConstrainedBox(
-                                              constraints: const BoxConstraints(
-                                                maxHeight: 40,
-                                              ),
-                                              child: AutoSizeText(
-                                                '방탈기억',
-                                                style: TextStyle(
-                                                  fontFamily: "Tenada",
-                                                  fontSize: 90, // 기본 글자 크기
-                                                  color: Theme.of(context)
-                                                      .primaryColor,
-                                                ),
-                                                maxLines: 1, // 한 줄로 제한
-                                                minFontSize:
-                                                    18, // 글자 크기의 최소값 설정
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
+                            : Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(left: 12.0),
+                                  child: SizedBox(
+                                    height: 56,
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        GestureDetector(
+                                          onTap: () {
+                                            _scrollController.animateTo(
+                                              0.0,
+                                              duration: const Duration(
+                                                  milliseconds: 300),
+                                              curve: Curves.easeInOut,
                                             );
                                           },
+                                          child: Padding(
+                                            padding:
+                                                const EdgeInsets.only(top: 12),
+                                            child: LayoutBuilder(
+                                              builder: (context, constraints) {
+                                                return ConstrainedBox(
+                                                  constraints:
+                                                      const BoxConstraints(
+                                                          maxHeight: 45,
+                                                          maxWidth: 100),
+                                                  child: AutoSizeText(
+                                                    '방탈기억',
+                                                    style: TextStyle(
+                                                      fontFamily: "Tenada",
+                                                      fontSize: 90, // 기본 글자 크기
+                                                      color: Theme.of(context)
+                                                          .primaryColor,
+                                                    ),
+                                                    maxLines: 1, // 한 줄로 제한
+                                                    minFontSize:
+                                                        18, // 글자 크기의 최소값 설정
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                    ),
-                                    Row(
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(Icons.search),
-                                          onPressed: () {
-                                            setState(() {
-                                              print("정렬기준: $_selectedSorting");
-                                              _isSearching = true;
-                                            });
-                                          },
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.settings),
-                                          onPressed: () {
-                                            setState(() {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      const SettingMainPage(),
-                                                ),
-                                              );
-                                            });
-                                          },
+                                        Row(
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(Icons.search),
+                                              onPressed: () {
+                                                setState(() {
+                                                  print(
+                                                      "정렬기준: $_selectedSorting");
+                                                  _isSearching = true;
+                                                });
+                                              },
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(Icons.settings),
+                                              onPressed: () {
+                                                setState(() {
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          const SettingMainPage(),
+                                                    ),
+                                                  );
+                                                });
+                                              },
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
-                                  ],
+                                  ),
                                 ),
                               ),
                         const SizedBox(height: 5),
@@ -281,6 +289,9 @@ class _RecordMainPageState extends State<RecordMainPage> {
                             ],
                           ),
                         ),
+                        SizedBox(
+                          height: 5,
+                        )
                       ],
                     ),
                   ),
@@ -298,26 +309,30 @@ class _RecordMainPageState extends State<RecordMainPage> {
                   },
                 ),
               ),
-
               records.isEmpty
-                ? const SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.memory_rounded, size: 70, color: Colors.grey),
-                      SizedBox(height: 20,),
-                      Text('방탈출 기록이 없습니다.', style: TextStyle(fontSize: 20, color: Colors.grey)),
-                    ],
-                  ),
-                ),
-              ) :
-              SliverList(
-                delegate: SliverChildListDelegate(
-                  _buildSliverListItems(snapshot.data!),
-                ),
-              ),
+                  ? const SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.memory_rounded,
+                                size: 70, color: Colors.grey),
+                            SizedBox(
+                              height: 20,
+                            ),
+                            Text('방탈출 기록이 없습니다.',
+                                style: TextStyle(
+                                    fontSize: 20, color: Colors.grey)),
+                          ],
+                        ),
+                      ),
+                    )
+                  : SliverList(
+                      delegate: SliverChildListDelegate(
+                        _buildSliverListItems(snapshot.data!),
+                      ),
+                    ),
             ],
           );
         },
@@ -333,10 +348,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
             _loadRecords();
           }
         },
-        child: const Icon(
-          Icons.add,
-          color: Colors.white
-        ),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
@@ -373,7 +385,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
             children: [
               // 텍스트
               ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 20),
+                constraints: const BoxConstraints(maxHeight: 18),
                 // 텍스트의 최대 높이 설정
                 child: AutoSizeText(
                   isSelected
@@ -381,7 +393,10 @@ class _RecordMainPageState extends State<RecordMainPage> {
                           ? value.substring(0, 6) + '...'
                           : value)
                       : label,
-                  style: Theme.of(context).textTheme.bodyText2,
+                  style: TextStyle(
+                    color: Theme.of(context).primaryColor,
+                    fontSize: 60,
+                  ),
                   maxLines: 1, // 한 줄로 제한
                   minFontSize: 10, // 최소 글자 크기
                   overflow: TextOverflow.ellipsis, // 텍스트가 넘칠 경우 생략부호 처리
@@ -558,12 +573,19 @@ class _RecordMainPageState extends State<RecordMainPage> {
                           decoration: BoxDecoration(
                               color: _getDifficultyColor(record.difficulty),
                               borderRadius: BorderRadius.circular(20)),
-                          padding: EdgeInsets.symmetric(vertical: 2, horizontal: 10),
+                          padding:
+                              EdgeInsets.symmetric(vertical: 2, horizontal: 10),
                           child: Row(
                             children: [
-                              if (double.tryParse(record.difficulty) != null) // double로 변환 가능할 때 별 아이콘 추가
-                                Icon(Icons.star_rounded, color: Colors.white, size: 16),
-                              SizedBox(width: double.tryParse(record.difficulty) != null ? 4 : 0), // 아이콘이 있을 때만 간격 추가
+                              if (double.tryParse(record.difficulty) !=
+                                  null) // double로 변환 가능할 때 별 아이콘 추가
+                                Icon(Icons.star_rounded,
+                                    color: Colors.white, size: 16),
+                              SizedBox(
+                                  width:
+                                      double.tryParse(record.difficulty) != null
+                                          ? 4
+                                          : 0), // 아이콘이 있을 때만 간격 추가
                               AutoSizeText(
                                 record.difficulty,
                                 style: const TextStyle(color: Colors.white),
@@ -620,43 +642,42 @@ class _RecordMainPageState extends State<RecordMainPage> {
       context: context,
       builder: (BuildContext context) {
         return SafeArea(
-          child: Padding(
-            padding: EdgeInsets.only(top: 5),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                ListTile(
-                  leading: Icon(Icons.edit),
-                  title: Text('수정하기'),
-                  onTap: () {
-                    Navigator.pop(context); // BottomSheet 닫기
-                    // 수정 후 결과를 기다림
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => EditMainPage(record: record),
-                      ),
-                    ).then((isEdited) {
-                      // 수정 후 돌아왔을 때 업데이트 처리
-                      if (isEdited == true) {
-                        _loadRecords();
-                      }
-                    });
-                  },
-                ),
-                ListTile(
-                  leading: Icon(Icons.delete),
-                  title: Text('삭제하기'),
-                  onTap: () async {
-                    await _deleteRecord(record); // 삭제 로직 실행
-                    Navigator.pop(context); // BottomSheet 닫기
-                    _loadRecords(); // 삭제 후 데이터를 다시 로드하여 UI 업데이트
-                  },
-                ),
-              ],
-            ),
-          )
-        );
+            child: Padding(
+          padding: EdgeInsets.only(top: 5),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                leading: Icon(Icons.edit),
+                title: Text('수정하기'),
+                onTap: () {
+                  Navigator.pop(context); // BottomSheet 닫기
+                  // 수정 후 결과를 기다림
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EditMainPage(record: record),
+                    ),
+                  ).then((isEdited) {
+                    // 수정 후 돌아왔을 때 업데이트 처리
+                    if (isEdited == true) {
+                      _loadRecords();
+                    }
+                  });
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.delete),
+                title: Text('삭제하기'),
+                onTap: () async {
+                  await _deleteRecord(record); // 삭제 로직 실행
+                  Navigator.pop(context); // BottomSheet 닫기
+                  _loadRecords(); // 삭제 후 데이터를 다시 로드하여 UI 업데이트
+                },
+              ),
+            ],
+          ),
+        ));
       },
     );
   }
@@ -683,6 +704,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
       );
     });
   }
+
   String _getSatisfactionImage(String satisfaction) {
     switch (satisfaction) {
       case '흙길':
