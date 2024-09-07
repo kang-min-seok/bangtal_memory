@@ -36,7 +36,29 @@ class _RegionFilterOptionsState extends State<RegionFilterOptions> {
         } else if (snapshot.hasError) {
           return const Center(child: Text('오류가 발생했습니다.'));
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text('데이터가 없습니다.'));
+          return Container(
+            padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.background,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            width: double.infinity,
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "지역 필터 선택",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 16.0),
+                Text(
+                  "데이터가 없습니다.",
+                ),
+                SizedBox(height: 12.0),
+              ],
+            ),
+          );
         } else {
           final regions = snapshot.data!; // 데이터가 있는 경우
           return StatefulBuilder(
