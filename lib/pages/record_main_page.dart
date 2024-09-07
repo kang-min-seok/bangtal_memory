@@ -4,13 +4,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:http/http.dart' as http;
-import 'package:html/parser.dart' show parse;
 
 // 값
 import 'package:bangtal_memory/constants/constants.dart';
-import 'package:intl/intl.dart';
-import '../hive/escape_data_service.dart';
 import '../hive/escape_record.dart';
 
 // 페이지
@@ -381,7 +377,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
                 // 텍스트의 최대 높이 설정
                 child: AutoSizeText(
                   isSelected
-                      ? (value!.length > 6
+                      ? (value.length > 6
                           ? value.substring(0, 6) + '...'
                           : value)
                       : label,
@@ -704,7 +700,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
       case '인생테마':
         return 'assets/images/life.png';
       default:
-        return 'assets/images/grassFlower.png'; // 기본 이미지 (만약 만족도 값이 설정되지 않은 경우)
+        return 'assets/images/placeHolder.png'; // 기본 이미지 (만약 만족도 값이 설정되지 않은 경우)
     }
   }
 

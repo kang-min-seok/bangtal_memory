@@ -179,22 +179,11 @@ class _WriteMainPageState extends State<WriteMainPage> {
                     SizedBox(height: 10.0),
                     InkWell(
                       onTap: () async {
-                        // Hive 박스 열기
-                        var box = await Hive.openBox('escapeRoomData');
-
-                        // Hive에서 크롤링한 데이터를 가져오기
-                        List<dynamic> hiveData = box.get('data', defaultValue: []);
-
-                        // List<Map<String, dynamic>> 형태로 변환
-                        List<Map<String, dynamic>> data = hiveData.map((item) {
-                          return Map<String, dynamic>.from(item);
-                        }).toList();
-
                         // WriteSearchPage로 데이터 전달 및 선택한 결과를 받아옴
                         final selectedData = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => WriteSearchPage(), // Hive 데이터를 전달
+                            builder: (context) => const WriteSearchPage(), // Hive 데이터를 전달
                           ),
                         );
 
