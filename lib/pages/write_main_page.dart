@@ -57,15 +57,28 @@ class _WriteMainPageState extends State<WriteMainPage> {
   String selectedSatisfaction="";
 
   void _selectGenre(String genre) {
-    setState(() {
-      selectedGenre = genre;
-    });
+    if(genre == selectedGenre){
+      setState(() {
+        selectedGenre="";
+      });
+    }else{
+      setState(() {
+        selectedGenre = genre;
+      });
+    }
+
   }
 
   void _selectSatisfaction(String satisfaction) {
-    setState(() {
-      selectedSatisfaction = satisfaction;
-    });
+    if (satisfaction == selectedSatisfaction){
+      setState(() {
+        selectedSatisfaction="";
+      });
+    }else {
+      setState(() {
+        selectedSatisfaction = satisfaction;
+      });
+    }
   }
 
   Future<void> _selectDate(BuildContext context) async {

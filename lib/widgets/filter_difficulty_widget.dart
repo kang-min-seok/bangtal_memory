@@ -1,3 +1,4 @@
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart'; // 사용 중인 별점 패키지 import
 
@@ -185,7 +186,18 @@ class _DifficultyFilterOptionsState extends State<DifficultyFilterOptions> {
           borderRadius: BorderRadius.circular(20.0),
         ),
       ),
-      child: Text(label),
+      child: AutoSizeText(
+        label,
+        style: const TextStyle(
+          fontSize: 18, // 기본 글자 크기
+          fontWeight: FontWeight.w600,
+        ),
+        maxLines: 1,
+        // 텍스트를 한 줄로 제한
+        minFontSize: 12,
+        // 최소 글자 크기
+        stepGranularity: 1.0,
+      ),
     );
   }
 }
