@@ -89,42 +89,30 @@ class _DifficultyFilterOptionsState extends State<DifficultyFilterOptions> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              Expanded(
+              Flexible(
                 child: Column(
                   children: [
                     const Text('최소 난이도'),
-                    // RatingBar(
-                    //   initialRating: minRating,
-                    //   maxRating: 5,
-                    //   isHalfAllowed: true,
-                    //   onRatingChanged: (rating) {
-                    //     setState(() {
-                    //       minRating = rating;
-                    //     });
-                    //   },
-                    //   halfFilledIcon: Icons.star_half_rounded,
-                    //   filledIcon: Icons.star_rounded,
-                    //   emptyIcon: Icons.star_border_rounded,
-                    // ),
-                    RatingBar.builder(
-                      initialRating: minRating,
-                      minRating: 0,
-                      maxRating: 5,
-                      itemSize: 30,
-                      direction: Axis.horizontal,
-                      allowHalfRating: true,
-                      // 반개 선택 허용
-                      itemCount: 5,
-                      itemPadding: const EdgeInsets.symmetric(horizontal: 2.0),
-                      itemBuilder: (context, _) => const Icon(
-                        Icons.star_rounded,
-                        color: Colors.amber,
+                    FittedBox(  // FittedBox를 사용하여 크기 조절
+                      child: RatingBar.builder(
+                        initialRating: minRating,
+                        minRating: 0,
+                        maxRating: 5,
+                        itemSize: 30,  // 기본 크기 설정
+                        direction: Axis.horizontal,
+                        allowHalfRating: true,
+                        itemCount: 5,
+                        itemPadding: const EdgeInsets.symmetric(horizontal: 2.0),
+                        itemBuilder: (context, _) => const Icon(
+                          Icons.star_rounded,
+                          color: Colors.amber,
+                        ),
+                        onRatingUpdate: (rating) {
+                          setState(() {
+                            minRating = rating;
+                          });
+                        },
                       ),
-                      onRatingUpdate: (rating) {
-                        setState(() {
-                          minRating = rating;
-                        });
-                      },
                     ),
                   ],
                 ),
@@ -135,42 +123,30 @@ class _DifficultyFilterOptionsState extends State<DifficultyFilterOptions> {
                   Text("~"),
                 ],
               ),
-              Expanded(
+              Flexible(
                 child: Column(
                   children: [
                     const Text('최대 난이도'),
-                    // RatingBar(
-                    //   initialRating: maxRating,
-                    //   maxRating: 5,
-                    //   isHalfAllowed: true,
-                    //   onRatingChanged: (rating) {
-                    //     setState(() {
-                    //       maxRating = rating;
-                    //     });
-                    //   },
-                    //   halfFilledIcon: Icons.star_half_rounded,
-                    //   filledIcon: Icons.star_rounded,
-                    //   emptyIcon: Icons.star_border_rounded,
-                    // ),
-                    RatingBar.builder(
-                      initialRating: maxRating,
-                      minRating: 0,
-                      maxRating: 5,
-                      itemSize: 30,
-                      direction: Axis.horizontal,
-                      allowHalfRating: true,
-                      // 반개 선택 허용
-                      itemCount: 5,
-                      itemPadding: const EdgeInsets.symmetric(horizontal: 2.0),
-                      itemBuilder: (context, _) => const Icon(
-                        Icons.star_rounded,
-                        color: Colors.amber,
+                    FittedBox(  // FittedBox로 크기 조절
+                      child: RatingBar.builder(
+                        initialRating: maxRating,
+                        minRating: 0,
+                        maxRating: 5,
+                        itemSize: 30,  // 기본 크기 설정
+                        direction: Axis.horizontal,
+                        allowHalfRating: true,
+                        itemCount: 5,
+                        itemPadding: const EdgeInsets.symmetric(horizontal: 2.0),
+                        itemBuilder: (context, _) => const Icon(
+                          Icons.star_rounded,
+                          color: Colors.amber,
+                        ),
+                        onRatingUpdate: (rating) {
+                          setState(() {
+                            maxRating = rating;
+                          });
+                        },
                       ),
-                      onRatingUpdate: (rating) {
-                        setState(() {
-                          maxRating = rating;
-                        });
-                      },
                     ),
                   ],
                 ),
