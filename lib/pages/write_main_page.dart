@@ -82,10 +82,32 @@ class _WriteMainPageState extends State<WriteMainPage> {
   }
 
   Future<void> _selectDate(BuildContext context) async {
+    DateTime selectedDate;
+
+    // _dateController의 값이 ????.??.?? 이거나 비어있으면 현재 날짜를 기본값으로 설정
+    if (_dateController.text.isEmpty || _dateController.text == "????.??.??") {
+      selectedDate = DateTime.now();
+    } else {
+      // 선택된 날짜가 있을 경우, 해당 날짜를 파싱하여 기본값으로 설정
+      try {
+        List<String> dateParts = _dateController.text.split('-');
+        if (dateParts.length == 3) {
+          selectedDate = DateTime(
+            int.parse(dateParts[0]),
+            int.parse(dateParts[1]),
+            int.parse(dateParts[2]),
+          );
+        } else {
+          selectedDate = DateTime.now(); // 날짜 형식이 올바르지 않은 경우 현재 날짜로 기본값 설정
+        }
+      } catch (e) {
+        selectedDate = DateTime.now(); // 파싱 오류 시 현재 날짜로 기본값 설정
+      }
+    }
+
     final DateTime? picked = await showModalBottomSheet<DateTime>(
       context: context,
       builder: (BuildContext context) {
-        DateTime selectedDate = DateTime.now();
         return Container(
           height: 250,
           child: Column(
@@ -93,7 +115,7 @@ class _WriteMainPageState extends State<WriteMainPage> {
               Expanded(
                 child: CupertinoDatePicker(
                   mode: CupertinoDatePickerMode.date,
-                  initialDateTime: DateTime.now(),
+                  initialDateTime: selectedDate, // 이미 선택된 날짜를 기본값으로 설정
                   onDateTimeChanged: (DateTime date) {
                     selectedDate = date;
                   },
@@ -117,9 +139,10 @@ class _WriteMainPageState extends State<WriteMainPage> {
       },
     );
 
-    if (picked != null && picked != DateTime.now()) {
+    if (picked != null) {
       setState(() {
-        _dateController.text = "${picked.year}-${picked.month}-${picked.day}";
+        // 선택한 날짜를 TextField에 표시
+        _dateController.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
       });
     }
   }

@@ -91,14 +91,14 @@ class _RecordMainPageState extends State<RecordMainPage> {
               SliverAppBar(
                 scrolledUnderElevation: 0,
                 floating: true,
-                collapsedHeight: 96,
+                collapsedHeight: 101,
                 backgroundColor: Theme.of(context).colorScheme.background,
                 flexibleSpace: FlexibleSpaceBar(
                   centerTitle: true,
                   collapseMode: CollapseMode.none,
                   titlePadding: EdgeInsets.zero,
                   title: Container(
-                    height: 109,
+                    height: 114,
                     padding: EdgeInsets.only(top: 5),
                     width: double.infinity,
                     child: Column(
@@ -106,7 +106,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
                       children: [
                         _isSearching
                             ? Padding(
-                                padding: EdgeInsets.fromLTRB(12, 10, 12, 3),
+                                padding: EdgeInsets.fromLTRB(12, 15, 12, 3),
                                 child: SizedBox(
                                   height: 43, // 텍스트 필드의 높이를 고정하여 일관성 유지
                                   child: TextField(
@@ -162,10 +162,11 @@ class _RecordMainPageState extends State<RecordMainPage> {
                                 child: Padding(
                                   padding: const EdgeInsets.only(left: 12.0),
                                   child: SizedBox(
-                                    height: 56,
+                                    height: 61,
                                     child: Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
                                       children: [
                                         GestureDetector(
                                           onTap: () {
@@ -238,7 +239,8 @@ class _RecordMainPageState extends State<RecordMainPage> {
                                   ),
                                 ),
                               ),
-                        const SizedBox(height: 5),
+                        if(_isSearching)
+                          const SizedBox(height: 5),
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Row(
@@ -593,8 +595,8 @@ class _RecordMainPageState extends State<RecordMainPage> {
               borderRadius: BorderRadius.circular(10), // 원형으로 자르기 위한 반경
               child: Image.asset(
                 _getSatisfactionImage(record.satisfaction),
-                width: MediaQuery.of(context).size.height * 0.085, // 이미지의 너비
-                height: MediaQuery.of(context).size.height * 0.085, // 이미지의 높이
+                width: MediaQuery.of(context).size.height * 0.088, // 이미지의 너비
+                height: MediaQuery.of(context).size.height * 0.088, // 이미지의 높이
                 fit: BoxFit.cover, // 이미지를 컨테이너에 맞게 조정
               ),
             ),
@@ -611,7 +613,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
                         child: AutoSizeText(
                           record.themeName,
                           style: const TextStyle(
-                            fontSize: 18, // 기본 글자 크기
+                            fontSize: 15, // 기본 글자 크기
                             fontWeight: FontWeight.w600,
                           ),
                           maxLines: 1,
@@ -631,7 +633,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
                               color: _getDifficultyColor(record.difficulty),
                               borderRadius: BorderRadius.circular(20)),
                           padding:
-                              EdgeInsets.symmetric(vertical: 2, horizontal: 10),
+                              EdgeInsets.symmetric(vertical: 2, horizontal: 8),
                           child: Row(
                             children: [
                               if (double.tryParse(record.difficulty) !=
@@ -643,13 +645,12 @@ class _RecordMainPageState extends State<RecordMainPage> {
                                       double.tryParse(record.difficulty) != null
                                           ? 4
                                           : 0), // 아이콘이 있을 때만 간격 추가
-                              AutoSizeText(
+                              Text(
                                 record.difficulty,
-                                style: const TextStyle(color: Colors.white),
-                                maxLines: 1,
-                                minFontSize: 12,
-                                stepGranularity: 1.0,
-                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11
+                                ),
                               ),
                             ],
                           ),
@@ -662,11 +663,12 @@ class _RecordMainPageState extends State<RecordMainPage> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           padding:
-                              EdgeInsets.symmetric(vertical: 2, horizontal: 10),
+                              EdgeInsets.symmetric(vertical: 2, horizontal: 8),
                           child: Text(
                             record.genre,
                             style: const TextStyle(
                               color: Colors.white,
+                              fontSize: 11
                             ),
                           ),
                         ),
@@ -675,7 +677,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
                   const SizedBox(height: 1),
                   Text(
                     record.storeName,
-                    style: const TextStyle(fontSize: 14),
+                    style: const TextStyle(fontSize: 12),
                   ),
                   const SizedBox(height: 8), // Subtitle과 날짜 간의 간격
                   Align(

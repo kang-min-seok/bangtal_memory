@@ -189,7 +189,7 @@ class _DifficultyFilterOptionsState extends State<DifficultyFilterOptions> {
       child: AutoSizeText(
         label,
         style: const TextStyle(
-          fontSize: 18, // 기본 글자 크기
+          fontSize: 14, // 기본 글자 크기
           fontWeight: FontWeight.w600,
         ),
         maxLines: 1,
