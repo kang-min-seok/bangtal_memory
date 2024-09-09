@@ -55,6 +55,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
   List<String>? _selectedDifficulties;
   double? _minRating;
   double? _maxRating;
+  bool _groupByStore = true;
 
   @override
   void dispose() {
@@ -130,6 +131,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
                                             .hintStyle
                                             ?.color,
                                         onPressed: () {
+                                          printAllEscapeRecords();
                                           if (_searchController
                                               .text.isNotEmpty) {
                                             _searchController.clear();
@@ -244,6 +246,18 @@ class _RecordMainPageState extends State<RecordMainPage> {
                               const SizedBox(width: 12),
                               _buildFilterChip(
                                 context: context,
+                                label: _groupByStore ? "매장별" : "테마별",
+                                value: null,
+                                onTap: () {
+                                  setState(() {
+                                    _groupByStore = !_groupByStore;
+                                    _loadRecords();
+                                  });
+                                },
+                                showIcon: false
+                              ),
+                              _buildFilterChip(
+                                context: context,
                                 label: "날짜",
                                 value: _startDate != null && _endDate != null
                                     ? "${_startDate!.year}-${_endDate!.year}"
@@ -329,29 +343,35 @@ class _RecordMainPageState extends State<RecordMainPage> {
                       ),
                     )
                   : SliverList(
-                      delegate: SliverChildListDelegate(
-                        _buildSliverListItems(snapshot.data!),
-                      ),
-                    ),
+                delegate: SliverChildListDelegate(
+                  _groupByStore
+                      ? _buildSliverListItemsByStore(records)
+                      : _buildSliverListItemsAsList(records),
+                ),
+              ),
             ],
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          final result = await Navigator.push(
+          Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const WriteMainPage()),
-          );
+          ).then((result) {
+            print("이거 돔?");
+            if(result == true){
+              print("마자 이거 돈다.");
+              _loadRecords();
+            }
+          });
 
-          if (result == true) {
-            _loadRecords();
-          }
         },
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
+
 
   // Chip 생성 로직
   Widget _buildFilterChip({
@@ -359,6 +379,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
     required String label,
     String? value,
     required VoidCallback onTap,
+    bool showIcon = true, // 아이콘 표시 여부에 대한 매개변수 추가
   }) {
     bool isSelected = value != null && value.isNotEmpty;
 
@@ -389,9 +410,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
                 // 텍스트의 최대 높이 설정
                 child: AutoSizeText(
                   isSelected
-                      ? (value.length > 6
-                          ? value.substring(0, 6) + '...'
-                          : value)
+                      ? (value!.length > 6 ? value.substring(0, 6) + '...' : value)
                       : label,
                   style: TextStyle(
                     color: Theme.of(context).primaryColor,
@@ -403,11 +422,13 @@ class _RecordMainPageState extends State<RecordMainPage> {
                 ),
               ),
               const SizedBox(width: 4),
-              // 삭제 아이콘 (onTap으로 대체된 delete 기능)
-              const Icon(
+              // 아이콘 대신 빈 공간을 추가하여 크기 일관성 유지
+              showIcon
+                  ? const Icon(
                 Icons.keyboard_arrow_down_rounded,
                 size: 20.0,
-              ),
+              )
+                  : const SizedBox( height: 20), // 아이콘 자리에 빈 공간
             ],
           ),
         ),
@@ -416,7 +437,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
   }
 
   // Hive 데이터를 기반으로 섹션과 리스트 아이템을 구성하는 부분
-  List<Widget> _buildSliverListItems(List<EscapeRecord> records) {
+  List<Widget> _buildSliverListItemsByStore(List<EscapeRecord> records) {
     Map<String, List<EscapeRecord>> sections = {};
 
     // 데이터를 검색어에 따라 필터링
@@ -503,6 +524,40 @@ class _RecordMainPageState extends State<RecordMainPage> {
     }
 
     return slivers;
+  }
+
+  // 가게별 그룹화하지 않고 리스트로 나열하는 함수
+  List<Widget> _buildSliverListItemsAsList(List<EscapeRecord> records) {
+    // 데이터를 검색어에 따라 필터링
+    List<EscapeRecord> filteredRecords = _searchQuery.isEmpty
+        ? records
+        : records.where((record) {
+      return record.storeName
+          .toLowerCase()
+          .contains(_searchQuery.toLowerCase()) ||
+          record.themeName
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase());
+    }).toList();
+
+    // 날짜에 따라 정렬 (최신순 또는 오래된순)
+    filteredRecords.sort((a, b) {
+      DateTime? dateA = _parseDate(a.date);
+      DateTime? dateB = _parseDate(b.date);
+
+      if (dateA == null && dateB == null) return 0;
+      if (dateA == null) return 1; // A의 날짜가 없으면 뒤로
+      if (dateB == null) return -1; // B의 날짜가 없으면 뒤로
+
+      if (_selectedSorting == '최신순') {
+        return dateB.compareTo(dateA); // 최신순
+      } else {
+        return dateA.compareTo(dateB); // 오래된순
+      }
+    });
+
+    // 정렬된 데이터를 위젯 리스트로 변환
+    return filteredRecords.map((record) => _buildListTile(record)).toList();
   }
 
 // 유효한 날짜를 찾는 함수
@@ -704,6 +759,41 @@ class _RecordMainPageState extends State<RecordMainPage> {
       );
     });
   }
+
+
+  void printAllEscapeRecords() async {
+    // Hive 박스 열기
+    var box = await Hive.openBox<EscapeRecord>('escape_records');
+
+    // 박스가 비어있는 경우 처리
+    if (box.isEmpty) {
+      print("저장된 데이터가 없습니다.");
+      return;
+    }
+
+    // 저장된 모든 데이터를 가져옴
+    List<EscapeRecord> records = box.values.toList();
+
+    // 깔끔하게 로그 출력
+    print("\n===== 저장된 EscapeRecord 목록 (${records.length}개) =====");
+    for (int i = 0; i < records.length; i++) {
+      EscapeRecord record = records[i];
+      print('''
+----------------------------------
+#${i + 1}
+ID: ${record.id}
+날짜: ${record.date}
+가게 이름: ${record.storeName}
+테마 이름: ${record.themeName}
+난이도: ${record.difficulty}
+만족도: ${record.satisfaction}
+장르: ${record.genre}
+지역: ${record.region}
+----------------------------------
+    ''');
+    }
+  }
+
 
   String _getSatisfactionImage(String satisfaction) {
     switch (satisfaction) {

@@ -125,7 +125,14 @@ class _WriteMainPageState extends State<WriteMainPage> {
   }
 
 
-  void saveEscapeRecord({
+  Future<int> _getNextId() async {
+    var idBox = await Hive.openBox<int>('id_counter');
+    int currentId = idBox.get('current_id', defaultValue: 0) as int;
+    await idBox.put('current_id', currentId + 1);
+    return currentId + 1;
+  }
+
+  Future<void> saveEscapeRecord({
     required String themeName,
     required String storeName,
     required String region,
@@ -134,31 +141,26 @@ class _WriteMainPageState extends State<WriteMainPage> {
     required String selectedDifficulty,
     required String date,
   }) async {
-    // Hive 박스 열기 (여기서는 "escape_records"라는 이름으로 박스를 엽니다.)
     var box = await Hive.openBox<EscapeRecord>('escape_records');
-
-    // ID는 auto-increment가 가능하니 기존 레코드의 ID를 가져오고 없으면 1로 시작
-    int id = box.isEmpty ? 1 : box.length + 1;
+    int id = await _getNextId(); // 고유 ID를 가져옴
 
     themeName = themeName.trim().isEmpty ? "모름" : themeName;
     storeName = storeName.trim().isEmpty ? "모름" : storeName;
     region = region.trim().isEmpty ? "모름" : region;
     date = date.trim().isEmpty ? "????.??.??" : date;
 
-    // EscapeRecord 인스턴스 생성
     var record = EscapeRecord(
       id: id,
       date: date,
       storeName: storeName,
       themeName: themeName,
-      difficulty: realDifficulty,
+      difficulty: selectedDifficulty,
       satisfaction: selectedSatisfaction,
       genre: selectedGenre,
       region: region,
     );
 
-    // Hive 박스에 저장
-    await box.put(id, record);
+    await box.put(id, record); // 고유한 ID로 저장
 
     print("데이터 저장 완료: $record");
   }
@@ -494,13 +496,13 @@ class _WriteMainPageState extends State<WriteMainPage> {
               ),
               SizedBox(height: 30.0),
               InkWell(
-                onTap: () {
+                onTap: () async {
                   String themeName = _themeNameController.text;
                   String storeName = _storeNameController.text;
                   String region = _regionController.text;
                   String date = _dateController.text;
 
-                  saveEscapeRecord(
+                  await saveEscapeRecord(
                     themeName: themeName,
                     storeName: storeName,
                     region: region,

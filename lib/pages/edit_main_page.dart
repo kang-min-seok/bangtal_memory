@@ -139,7 +139,7 @@ class _EditMainPageState extends State<EditMainPage> {
   }
 
 
-  void updateEscapeRecord({
+  Future<void> updateEscapeRecord({
     required int id, // 기존 레코드의 ID를 받음
     required String themeName,
     required String storeName,
@@ -524,13 +524,13 @@ class _EditMainPageState extends State<EditMainPage> {
               ),
               SizedBox(height: 30.0),
               InkWell(
-                onTap: () {
+                onTap: () async {
                   String themeName = _themeNameController.text;
                   String storeName = _storeNameController.text;
                   String region = _regionController.text;
                   String date = _dateController.text;
 
-                  updateEscapeRecord(
+                  await updateEscapeRecord(
                     id: widget.record.id,
                     themeName: themeName,
                     storeName: storeName,
