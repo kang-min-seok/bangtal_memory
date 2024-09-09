@@ -359,9 +359,7 @@ class _RecordMainPageState extends State<RecordMainPage> {
             context,
             MaterialPageRoute(builder: (context) => const WriteMainPage()),
           ).then((result) {
-            print("이거 돔?");
             if(result == true){
-              print("마자 이거 돈다.");
               _loadRecords();
             }
           });
@@ -404,7 +402,8 @@ class _RecordMainPageState extends State<RecordMainPage> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 텍스트
+              if(!showIcon)
+                SizedBox(width: 3,),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 18),
                 // 텍스트의 최대 높이 설정
@@ -421,14 +420,17 @@ class _RecordMainPageState extends State<RecordMainPage> {
                   overflow: TextOverflow.ellipsis, // 텍스트가 넘칠 경우 생략부호 처리
                 ),
               ),
-              const SizedBox(width: 4),
               // 아이콘 대신 빈 공간을 추가하여 크기 일관성 유지
               showIcon
-                  ? const Icon(
-                Icons.keyboard_arrow_down_rounded,
-                size: 20.0,
-              )
-                  : const SizedBox( height: 20), // 아이콘 자리에 빈 공간
+                  ? const Row(
+                children: [
+                  SizedBox(width: 4,),
+                   Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 20.0,
+                  )
+                ],
+              ) : const SizedBox( height: 20, width: 3,), // 아이콘 자리에 빈 공간
             ],
           ),
         ),
