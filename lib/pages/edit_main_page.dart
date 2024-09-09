@@ -44,8 +44,10 @@ class _EditMainPageState extends State<EditMainPage> {
     double? ratingValue = double.tryParse(difficulty);
     if (ratingValue != null) {
       selectedRating = ratingValue.toString();
+      realDifficulty = ratingValue.toString();
     } else {
       selectedDifficulty = difficulty;
+      realDifficulty = difficulty;
     }
 
     selectedGenre = widget.record.genre;
