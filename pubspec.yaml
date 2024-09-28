@@ -54,13 +54,13 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/dirt.png
-    - assets/images/dirtGrass.png
-    - assets/images/flower.png
-    - assets/images/flowerGarden.png
-    - assets/images/grass.png
-    - assets/images/grassFlower.png
-    - assets/images/life.png
+    - assets/images/dirt.jpg
+    - assets/images/dirtGrass.jpg
+    - assets/images/flower.jpg
+    - assets/images/flowerGarden.jpg
+    - assets/images/grass.jpg
+    - assets/images/grassFlower.jpg
+    - assets/images/life.jpg
     - assets/images/placeHolder.png
   fonts:
     - family: Tenada

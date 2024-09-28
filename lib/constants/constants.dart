@@ -35,7 +35,7 @@ final Map<String, Color> genreColorMap = {
   '감성': Colors.purple,
   '로맨스': Colors.pinkAccent,
   '모험': Colors.orange,
-  '코미디': Colors.yellow,
+  '코미디': Colors.amber,
   '판타지': Colors.lightBlue,
   'SF': Colors.teal,
   '아케이드': Colors.indigo,

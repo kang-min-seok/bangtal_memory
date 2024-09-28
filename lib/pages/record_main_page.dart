@@ -800,19 +800,19 @@ ID: ${record.id}
   String _getSatisfactionImage(String satisfaction) {
     switch (satisfaction) {
       case '흙길':
-        return 'assets/images/dirt.png';
+        return 'assets/images/dirt.jpg';
       case '흙풀길':
-        return 'assets/images/dirtGrass.png';
+        return 'assets/images/dirtGrass.jpg';
       case '풀길':
-        return 'assets/images/grass.png';
+        return 'assets/images/grass.jpg';
       case '풀꽃길':
-        return 'assets/images/grassFlower.png';
+        return 'assets/images/grassFlower.jpg';
       case '꽃길':
-        return 'assets/images/flower.png';
+        return 'assets/images/flower.jpg';
       case '꽃밭길':
-        return 'assets/images/flowerGarden.png';
+        return 'assets/images/flowerGarden.jpg';
       case '인생테마':
-        return 'assets/images/life.png';
+        return 'assets/images/life.jpg';
       default:
         return 'assets/images/placeHolder.png'; // 기본 이미지 (만약 만족도 값이 설정되지 않은 경우)
     }
