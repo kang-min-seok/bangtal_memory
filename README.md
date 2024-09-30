@@ -1,16 +1,12 @@
-# bangtal_memory
+# 방탈기억
+복잡한 기능 및 내용 없이 방탈출 플레이를 기록 하는 어플.
 
-방탈출 기록을 하는 어플.
+https://github.com/user-attachments/assets/c0dc1383-42f5-4c21-abe4-c7fb1c296875
 
-## Getting Started
+## 화면 캡처
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/cee06dd3-c01c-4c8c-be6b-b0bb68d9b651" width="200"/>
+  <img src="https://github.com/user-attachments/assets/36aec4f3-2261-439e-b6fa-684cd86be0c5" width="200"/>
+  <img src="https://github.com/user-attachments/assets/c764d166-72b2-4d63-9c4c-dab0b8a052c0" width="200"/>
+</p>
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
