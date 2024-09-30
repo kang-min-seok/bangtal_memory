@@ -9,6 +9,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'theme/theme_custom.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:bangtal_memory/pages/record_main_page.dart';
+import 'package:flutter/services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // 비동기 작업을 위한 초기화
@@ -51,6 +52,10 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      systemNavigationBarColor: Colors.transparent,  // 내비게이션 바 투명화
+    ));
     _initializeData(); // 백그라운드에서 데이터를 로드
   }
 

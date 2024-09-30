@@ -346,7 +346,8 @@ class _RecordMainPageState extends State<RecordMainPage> {
                 delegate: SliverChildListDelegate(
                   _groupByStore
                       ? _buildSliverListItemsByStore(records)
-                      : _buildSliverListItemsAsList(records),
+                      : _buildSliverListItemsAsList(records)
+                        ..add(SizedBox(height: MediaQuery.of(context).padding.bottom)),
                 ),
               ),
             ],
