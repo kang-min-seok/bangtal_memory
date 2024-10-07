@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' show parse;
@@ -30,6 +31,13 @@ class EscapeDataService {
   }
 
   Future<void> _crawlDataFromWeb() async {
+    var connectivityResult = await Connectivity().checkConnectivity();
+
+    if (connectivityResult.contains(ConnectivityResult.none)) {
+      print("인터넷 연결이 없음");
+      return;
+    }
+
     var url = 'https://colory.mooo.com/bba/catalogue';
     try {
       var response = await http.get(Uri.parse(url));
@@ -77,15 +85,16 @@ class EscapeDataService {
             }
           }
         } else {
-          print('No themes-info found');
+          print('테마 정보를 불러오는데 실패했습니다.');
         }
 
         // Hive에 데이터 저장
         await _box.put('data', data);
         print("크롤링 성공하여 데이터 저장됨.");
+
         _saveLastUpdatedTime();
       } else {
-        print('Failed to load page');
+        print('요청 실패');
       }
     } catch (e) {
       print('Error: $e');

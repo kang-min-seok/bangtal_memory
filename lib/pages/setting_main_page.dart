@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../hive/escape_record.dart';
 import 'setting_theme_page.dart';
@@ -80,6 +81,13 @@ class _SettingMainPageState extends State<SettingMainPage> {
 
   // 크롤링 후 데이터를 Hive에 덮어씌우는 함수
   Future<void> _updateCrawledData() async {
+    var connectivityResult = await Connectivity().checkConnectivity();
+
+    if (connectivityResult.contains(ConnectivityResult.none)) {
+      _showNoConnectionDialog(context);
+      return;
+    }
+
     var url = 'https://colory.mooo.com/bba/catalogue';
     var box = await Hive.openBox('escapeRoomData');
 
@@ -129,14 +137,41 @@ class _SettingMainPageState extends State<SettingMainPage> {
 
         // Hive에 데이터 저장 (기존 데이터 덮어쓰기)
         await box.put('data', data);
-        print("크롤링 성공하여 데이터 저장됨.");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('데이터 업데이트 완료')),
+        );
         _saveLastUpdatedTime(); // 크롤링 후 업데이트 시간을 저장
       } else {
-        print('Failed to load page');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('데이터를 불러오는데 실패했습니다.')),
+        );
       }
     } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('데이터를 불러오는데 실패했습니다.')),
+      );
       print('Error: $e');
     }
+  }
+
+  void _showNoConnectionDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('인터넷 연결이 없음'),
+          content: Text('테마 정보를 저장하려면 셀룰러 데이터를 켜거나 Wi-Fi를 사용하십시오.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('확인'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -215,9 +250,6 @@ class _SettingMainPageState extends State<SettingMainPage> {
                     onTap: () async {
                       // 크롤링 데이터 업데이트 수행
                       await _updateCrawledData();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('데이터 업데이트 완료')),
-                      );
                     },
                     trailing: Text(
                       _lastUpdated != null ? '$_lastUpdated' : '업데이트 기록 없음',

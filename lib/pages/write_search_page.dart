@@ -1,5 +1,9 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../hive/escape_data_service.dart';
 
 class WriteSearchPage extends StatefulWidget {
   const WriteSearchPage({super.key});
@@ -12,20 +16,28 @@ class _WriteSearchPageState extends State<WriteSearchPage> {
   String _searchQuery = '';  // 검색어 저장
   TextEditingController _searchController = TextEditingController();
 
+  late EscapeDataService _dataService;
+  late SharedPreferences _prefs;
+
   List<Map<String, dynamic>> _allData = [];
   List<Map<String, dynamic>> _filteredData = []; // 필터링된 데이터를 저장하는 리스트
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     getData();
-    print(_allData);
   }
 
   Future<void> getData() async {
     var box = await Hive.openBox('escapeRoomData');
 
     List<dynamic> hiveData = box.get('data', defaultValue: []);
+
+    if (hiveData.isEmpty) {
+      await _downloadData();
+      hiveData = box.get('data', defaultValue: []);
+    }
 
     setState(() {
       _allData = hiveData.map((item) {
@@ -35,7 +47,56 @@ class _WriteSearchPageState extends State<WriteSearchPage> {
       _filteredData = hiveData.map((item) {
         return Map<String, dynamic>.from(item);
       }).toList();
+
     });
+  }
+
+  Future<void> _downloadData() async {
+    var connectivityResult = await Connectivity().checkConnectivity();
+
+    if (connectivityResult.contains(ConnectivityResult.none)) {
+      _showNoConnectionDialog(context);
+      return;
+    }
+
+    _prefs = await SharedPreferences.getInstance();
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    _dataService = EscapeDataService();
+    await _dataService.initializeHive();
+
+    await _dataService.loadData().then((_) async {
+      await _prefs.setBool('isDataLoaded', true);
+      print('데이터 로드 완료');
+    });
+
+    setState(() {
+      _isLoading = false; // 다운로드 완료 후 로딩 상태 false로 변경
+    });
+  }
+
+  void _showNoConnectionDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('인터넷 연결이 없음'),
+          content: Text('테마 정보를 저장하려면 셀룰러 데이터를 켜거나 Wi-Fi를 사용하십시오.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+              },
+              child: Text('확인'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _filterData(String query) {
@@ -91,7 +152,11 @@ class _WriteSearchPageState extends State<WriteSearchPage> {
           },
         ),
       ),
-      body: _filteredData.isEmpty
+      body: _isLoading
+          ? Center(
+        child: CircularProgressIndicator(), // 로딩 중일 때 스피너 표시
+      )
+          : _filteredData.isEmpty
           ? Center(
         child: Text('검색 결과가 없습니다.'),
       )
@@ -102,9 +167,7 @@ class _WriteSearchPageState extends State<WriteSearchPage> {
           return ListTile(
             title: Text(
               item['theme'],
-              style: TextStyle(
-                  fontWeight: FontWeight.bold
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
             shape: Border(
               bottom: BorderSide(

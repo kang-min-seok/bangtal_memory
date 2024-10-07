@@ -211,8 +211,6 @@ class _RecordMainPageState extends State<RecordMainPage> {
                                               icon: const Icon(Icons.search),
                                               onPressed: () {
                                                 setState(() {
-                                                  print(
-                                                      "정렬기준: $_selectedSorting");
                                                   _isSearching = true;
                                                 });
                                               },
