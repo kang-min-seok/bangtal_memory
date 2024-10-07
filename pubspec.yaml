@@ -3,7 +3,7 @@ description: "방탈출 기록을 하는 어플."
 
 publish_to: 'none'
 
-version: 1.0.0+4
+version: 1.0.0+5
 
 environment:
   sdk: '>=3.3.4 <4.0.0'
