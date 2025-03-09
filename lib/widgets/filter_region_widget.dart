@@ -26,6 +26,13 @@ class _RegionFilterOptionsState extends State<RegionFilterOptions> {
     return uniqueRegions;
   }
 
+  Future<bool> _onWillPop() async {
+    Navigator.pop(context, {
+      'selectedRegions': selectedRegions, // 지역을 Map으로 반환
+    });
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<String>>(
@@ -36,103 +43,112 @@ class _RegionFilterOptionsState extends State<RegionFilterOptions> {
         } else if (snapshot.hasError) {
           return const Center(child: Text('오류가 발생했습니다.'));
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Container(
-            padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.background,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            width: double.infinity,
-            child: const Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "지역 필터 선택",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 16.0),
-                Text(
-                  "데이터가 없습니다.",
-                ),
-                SizedBox(height: 12.0),
-              ],
-            ),
-          );
-        } else {
-          final regions = snapshot.data!; // 데이터가 있는 경우
-          return StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-              return Container(
+          return SafeArea(
+              child: Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.background,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                 ),
                 width: double.infinity,
-                child: Column(
+                child: const Column(
                   mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       "지역 필터 선택",
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 16.0),
-                    Wrap(
-                      spacing: 8.0,
-                      runSpacing: 4.0,
-                      children: regions.map((region) {
-                        return ChoiceChip(
-                          label: Text(region),
-                          selected: selectedRegions.contains(region),
-                          onSelected: (bool selected) {
-                            setState(() {
-                              if (selected) {
-                                selectedRegions.add(region);
-                              } else {
-                                selectedRegions.remove(region);
-                              }
-                            });
-                          },
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20.0),
-                            // 양옆 둥글게 설정
-                            side: BorderSide(
-                              color: selectedRegions.contains(region)
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Theme.of(context).colorScheme.surface,
-                            ),
-                          ),
-                          backgroundColor: Colors.transparent,
-                          selectedColor: Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withOpacity(0.19),
-                          labelStyle: TextStyle(
-                            color: selectedRegions.contains(region)
-                                ? Theme.of(context).colorScheme.primary
-                                : Theme.of(context).colorScheme.onBackground,
-                          ),
-                          showCheckmark: false,
-                        );
-                      }).toList(),
+                    SizedBox(height: 16.0),
+                    Text(
+                      "데이터가 없습니다.",
                     ),
-                    const SizedBox(height: 24.0),
-                    SizedBox(
-                      width: double.infinity, // 버튼의 너비를 부모 위젯의 최대 너비로 설정
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // 선택된 지역을 처리하는 로직 추가
-                          Navigator.pop(context, {
-                            'selectedRegions': selectedRegions, // 지역을 Map으로 반환
-                          });
-                        },
-                        child: const Text('선택 완료'),
-                      ),
-                    ),
+                    SizedBox(height: 12.0),
                   ],
                 ),
+              )
+          );
+        } else {
+          final regions = snapshot.data!; // 데이터가 있는 경우
+          return StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return WillPopScope(
+                  onWillPop: _onWillPop,
+                  child: SafeArea(
+                      child: Container(
+                        padding: const EdgeInsets.all(16.0),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.background,
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                        ),
+                        width: double.infinity,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Align(
+                              alignment: Alignment.topCenter, // 해당 위젯만 왼쪽(시작) 정렬로 설정
+                              child: Text(
+                                "지역 필터 선택",
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            const SizedBox(height: 16.0),
+                            Wrap(
+                              spacing: 8.0,
+                              runSpacing: 4.0,
+                              children: regions.map((region) {
+                                return ChoiceChip(
+                                  label: Text(region),
+                                  selected: selectedRegions.contains(region),
+                                  onSelected: (bool selected) {
+                                    setState(() {
+                                      if (selected) {
+                                        selectedRegions.add(region);
+                                      } else {
+                                        selectedRegions.remove(region);
+                                      }
+                                    });
+                                  },
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20.0),
+                                    // 양옆 둥글게 설정
+                                    side: BorderSide(
+                                      color: selectedRegions.contains(region)
+                                          ? Theme.of(context).colorScheme.primary
+                                          : Theme.of(context).colorScheme.surface,
+                                    ),
+                                  ),
+                                  backgroundColor: Colors.transparent,
+                                  selectedColor: Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withOpacity(0.19),
+                                  labelStyle: TextStyle(
+                                    color: selectedRegions.contains(region)
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Theme.of(context).colorScheme.onBackground,
+                                  ),
+                                  showCheckmark: false,
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 24.0),
+                            SizedBox(
+                              width: double.infinity, // 버튼의 너비를 부모 위젯의 최대 너비로 설정
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  // 선택된 지역을 처리하는 로직 추가
+                                  Navigator.pop(context, {
+                                    'selectedRegions': selectedRegions, // 지역을 Map으로 반환
+                                  });
+                                },
+                                child: const Text('선택 완료'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                  )
               );
             },
           );

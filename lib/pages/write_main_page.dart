@@ -106,33 +106,37 @@ class _WriteMainPageState extends State<WriteMainPage> {
 
     final DateTime? picked = await showModalBottomSheet<DateTime>(
       context: context,
+      // 필요한 경우 아래처럼 전체 화면으로 사용할 때:
+      // isScrollControlled: true,
       builder: (BuildContext context) {
-        return Container(
-          height: 250,
-          child: Column(
-            children: [
-              Expanded(
-                child: CupertinoDatePicker(
-                  mode: CupertinoDatePickerMode.date,
-                  initialDateTime: selectedDate, // 이미 선택된 날짜를 기본값으로 설정
-                  onDateTimeChanged: (DateTime date) {
-                    selectedDate = date;
-                  },
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(selectedDate);
-                },
-                child: Text(
-                  '확인',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontSize: 16,
+        return SafeArea(
+          child: Container(
+            height: 250,
+            child: Column(
+              children: [
+                Expanded(
+                  child: CupertinoDatePicker(
+                    mode: CupertinoDatePickerMode.date,
+                    initialDateTime: selectedDate,
+                    onDateTimeChanged: (DateTime date) {
+                      selectedDate = date;
+                    },
                   ),
                 ),
-              ),
-            ],
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(selectedDate);
+                  },
+                  child: Text(
+                    '확인',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },

@@ -131,7 +131,6 @@ class _RecordMainPageState extends State<RecordMainPage> {
                                             .hintStyle
                                             ?.color,
                                         onPressed: () {
-                                          printAllEscapeRecords();
                                           if (_searchController
                                               .text.isNotEmpty) {
                                             _searchController.clear();
@@ -759,40 +758,6 @@ class _RecordMainPageState extends State<RecordMainPage> {
         maxRating: _maxRating,
       );
     });
-  }
-
-
-  void printAllEscapeRecords() async {
-    // Hive 박스 열기
-    var box = await Hive.openBox<EscapeRecord>('escape_records');
-
-    // 박스가 비어있는 경우 처리
-    if (box.isEmpty) {
-      print("저장된 데이터가 없습니다.");
-      return;
-    }
-
-    // 저장된 모든 데이터를 가져옴
-    List<EscapeRecord> records = box.values.toList();
-
-    // 깔끔하게 로그 출력
-    print("\n===== 저장된 EscapeRecord 목록 (${records.length}개) =====");
-    for (int i = 0; i < records.length; i++) {
-      EscapeRecord record = records[i];
-      print('''
-----------------------------------
-#${i + 1}
-ID: ${record.id}
-날짜: ${record.date}
-가게 이름: ${record.storeName}
-테마 이름: ${record.themeName}
-난이도: ${record.difficulty}
-만족도: ${record.satisfaction}
-장르: ${record.genre}
-지역: ${record.region}
-----------------------------------
-    ''');
-    }
   }
 
 
