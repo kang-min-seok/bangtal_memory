@@ -3,7 +3,7 @@ description: "방탈출 기록을 하는 어플."
 
 publish_to: 'none'
 
-version: 1.0.0+5
+version: 1.0.1+6
 
 environment:
   sdk: '>=3.3.4 <4.0.0'
@@ -16,8 +16,8 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.6
   shared_preferences: ^2.2.2
-  provider: ^6.1.2
-  intl: ^0.18.1
+  provider: ^6.1.5
+  intl: ^0.19.0
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   http: ^1.2.2
@@ -26,6 +26,10 @@ dependencies:
   auto_size_text: ^3.0.0
   flutter_launcher_icons: ^0.13.1
   connectivity_plus: ^6.0.5
+  qr_flutter: ^4.1.0
+  qr_code_scanner_plus: ^2.0.10+1
+  archive: ^4.0.7
+  smooth_page_indicator: ^1.2.1
 
 dev_dependencies:
   flutter_test:

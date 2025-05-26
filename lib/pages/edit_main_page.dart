@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:hive/hive.dart';
 import 'package:bangtal_memory/constants/constants.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../hive/escape_record.dart';
+import '../hive/genre_list.dart';
 
 class EditMainPage extends StatefulWidget {
   final EscapeRecord record; // record를 받아옴
@@ -16,6 +18,7 @@ class EditMainPage extends StatefulWidget {
 }
 
 class _EditMainPageState extends State<EditMainPage> {
+  late Box<GenreList> _genreBox;
   late TextEditingController _themeNameController;
   late TextEditingController _storeNameController;
   late TextEditingController _regionController;
@@ -32,6 +35,8 @@ class _EditMainPageState extends State<EditMainPage> {
   @override
   void initState() {
     super.initState();
+
+    _genreBox = Hive.box<GenreList>('genreLists');
 
     // 전달받은 데이터를 컨트롤러에 초기화
     _themeNameController = TextEditingController(text: widget.record.themeName);
@@ -334,34 +339,49 @@ class _EditMainPageState extends State<EditMainPage> {
                       Wrap(
                         spacing: 8.0,
                         runSpacing: 8.0,
-                        children: genreList.map((genre) {
-                          return ChoiceChip(
-                              label: Text(genre),
-                              selected: selectedGenre == genre,
-                              onSelected: (selected) {
-                                _selectGenre(genre);
-                              },
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20.0),
-                                // 양옆 둥글게 설정
-                                side: BorderSide(
-                                  color: selectedGenre == genre
-                                      ? Theme.of(context).colorScheme.primary
-                                      : Theme.of(context).colorScheme.surface,
-                                ),
-                              ),
-                              backgroundColor: Colors.transparent,
-                              selectedColor: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withOpacity(0.19),
-                              labelStyle: TextStyle(
-                                color: selectedGenre == genre
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Theme.of(context).colorScheme.onBackground,
-                              ),
-                              showCheckmark: false);
-                        }).toList(),
+                        children: [
+                          ValueListenableBuilder(
+                            valueListenable: _genreBox.listenable(),        // Box 변경 시 자동 리빌드
+                            builder: (context, Box<GenreList> box, _) {
+                              final genres = box.values.toList()
+                                ..sort((a, b) => a.id.compareTo(b.id));     // id 순 정렬(선택)
+
+                              return Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: genres.map((g) {
+                                  final genre   = g.genre;
+                                  final chipCol = Color(g.colorValue);       // 저장해 둔 색상
+
+                                  return ChoiceChip(
+                                    label: Text(genre),
+                                    selected: selectedGenre == genre,
+                                    onSelected: (_) => _selectGenre(genre),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                      side: BorderSide(
+                                        color: selectedGenre == genre
+                                            ? Theme.of(context).colorScheme.primary
+                                            : Theme.of(context).colorScheme.surface,
+                                      ),
+                                    ),
+                                    backgroundColor: Colors.transparent,
+                                    selectedColor: Theme.of(context)
+                                        .colorScheme
+                                        .primary
+                                        .withOpacity(0.19),
+                                    labelStyle: TextStyle(
+                                      color: selectedGenre == genre
+                                          ? Theme.of(context).colorScheme.primary
+                                          : Theme.of(context).colorScheme.onBackground,
+                                    ),
+                                    showCheckmark: false,
+                                  );
+                                }).toList(),
+                              );
+                            },
+                          ),
+                        ],
                       ),
                       SizedBox(height: 15.0),
                       Text(

@@ -4,6 +4,7 @@ class ThemeCustom {
   static ThemeData lightTheme = ThemeData(
       fontFamily: "SB_agro",
       useMaterial3: true,
+      scaffoldBackgroundColor: Color.fromARGB(255, 255, 255, 255),
       dividerColor: const Color(0xFFF5F5F5),
       primaryColor: const Color.fromARGB(255, 38, 38, 38),
       primaryColorDark: const Color.fromARGB(255, 118, 156, 220),
@@ -53,6 +54,7 @@ class ThemeCustom {
   static ThemeData darkTheme = ThemeData(
       fontFamily: "SB_agro",
       useMaterial3: true,
+      scaffoldBackgroundColor: Color.fromARGB(255, 26, 26, 26),
       dividerColor: const Color.fromARGB(255, 50, 50, 50),
       primaryColor: Colors.white,
       primaryColorDark: const Color.fromARGB(255, 118, 156, 220),

@@ -20,6 +20,7 @@ import 'package:bangtal_memory/widgets/filter_genre_widget.dart';
 import 'package:bangtal_memory/widgets/filter_satisfaction_widget.dart';
 import 'package:bangtal_memory/widgets/filter_region_widget.dart';
 
+import '../hive/genre_service.dart';
 import 'edit_main_page.dart';
 
 class RecordMainPage extends StatefulWidget {
@@ -813,8 +814,10 @@ class _RecordMainPageState extends State<RecordMainPage> {
   }
 
   Color _getGenreColor(String genre) {
-    return genreColorMap[genre] ??
-        Colors.grey; // 장르에 맞는 색상을 반환하고, 없으면 기본값으로 회색 사용
+    // Hive에 저장된 색(A) → 없으면 기본값(B) → 그래도 없으면 회색(C)
+    return GenreService.colors[genre] ??
+        defaultGenreColorMap[genre] ??   // 선택 사항: constants.dart 기본값
+        Colors.grey;
   }
 
   void _showFilterOptions(BuildContext context, String filter) {

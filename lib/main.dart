@@ -1,8 +1,11 @@
+import 'package:bangtal_memory/hive/genre_list.dart';
+import 'constants/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'hive/escape_data_service.dart';
 import 'hive/escape_record.dart';
+import 'hive/genre_service.dart';
 import 'theme/theme_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -30,8 +33,24 @@ void main() async {
 
   await Hive.initFlutter();
   Hive.registerAdapter(EscapeRecordAdapter());
+  Hive.registerAdapter(GenreListAdapter());
 
   await Hive.openBox<EscapeRecord>('escapeRecords');
+  final genreBox = await Hive.openBox<GenreList>('genreLists');
+
+  await GenreService.init();
+
+  // ▸▸▸ ① 장르 데이터가 없으면 기본값 삽입
+  if (genreBox.isEmpty) {
+    int idx = 0;
+    for (final name in defaultGenreList) {
+      final color = defaultGenreColorMap[name]!;
+      await genreBox.add(
+        GenreList(id: idx++, genre: name, colorValue: color.value),
+      );
+    }
+    debugPrint('기본 장르 ${genreBox.length}개 초기 세팅 완료');
+  }
 
   initializeDateFormatting().then((_) => runApp(MyApp(themeMode: themeMode)));
 }

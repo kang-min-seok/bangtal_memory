@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
-final List<String> genreList = [
+final List<String> defaultGenreList = [
   '공포',
   '스릴러',
   '추리',
@@ -24,7 +24,7 @@ final List<String> genreList = [
   '???'
 ];
 
-final Map<String, Color> genreColorMap = {
+final Map<String, Color> defaultGenreColorMap = {
   '공포': Colors.deepPurple,
   '스릴러': Colors.lightBlue,
   '추리': Colors.blueGrey,

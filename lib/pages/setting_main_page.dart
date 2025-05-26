@@ -1,3 +1,5 @@
+import 'package:bangtal_memory/pages/setting_qr_export_page.dart';
+import 'package:bangtal_memory/pages/setting_qr_import_page.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -211,6 +213,29 @@ class _SettingMainPageState extends State<SettingMainPage> {
               _SingleSection(
                 title: "데이터 관리",
                 children: [
+                  _CustomListTile(
+                    title: "qr로 내보내기",
+                    icon: Icons.qr_code_2_outlined,
+                    onTap: (){
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const QrExportPage()),
+                      );
+                    },
+                  ),
+
+                  _CustomListTile(
+                    title: "qr로 가져오기",
+                    icon: Icons.qr_code_scanner_rounded,
+                    onTap: (){
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const QrImportPage()),
+                      ).then((_) {
+                        getThemeText();
+                      });
+                    },
+                  ),
                   _CustomListTile(
                     title: "방탈출 기록 초기화",
                     icon: Icons.delete_forever,
