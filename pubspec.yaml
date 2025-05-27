@@ -26,6 +26,7 @@ dependencies:
   auto_size_text: ^3.0.0
   flutter_launcher_icons: ^0.13.1
   connectivity_plus: ^6.0.5
+  table_calendar: ^3.1.3
   qr_flutter: ^4.1.0
   qr_code_scanner_plus: ^2.0.10+1
   archive: ^4.0.7
@@ -59,13 +60,13 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/dirt.png
-    - assets/images/dirtGrass.png
-    - assets/images/flower.png
-    - assets/images/flowerGarden.png
-    - assets/images/grass.png
-    - assets/images/grassFlower.png
-    - assets/images/life.png
+    - assets/images/dirt.jpg
+    - assets/images/dirtGrass.jpg
+    - assets/images/flower.jpg
+    - assets/images/flowerGarden.jpg
+    - assets/images/grass.jpg
+    - assets/images/grassFlower.jpg
+    - assets/images/life.jpg
     - assets/images/placeHolder.png
   fonts:
     - family: Tenada

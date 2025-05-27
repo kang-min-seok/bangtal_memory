@@ -1,5 +1,6 @@
 // 패키지
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:bangtal_memory/pages/record_calendar_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
@@ -207,6 +208,20 @@ class _RecordMainPageState extends State<RecordMainPage> {
                                         ),
                                         Row(
                                           children: [
+                                            IconButton(
+                                              icon: const Icon(Icons.calendar_month_rounded),
+                                              onPressed: () {
+                                                setState(() {
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                      const RecordCalendarPage(),
+                                                    ),
+                                                  );
+                                                });
+                                              },
+                                            ),
                                             IconButton(
                                               icon: const Icon(Icons.search),
                                               onPressed: () {

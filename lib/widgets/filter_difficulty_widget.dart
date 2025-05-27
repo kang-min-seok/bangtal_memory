@@ -206,7 +206,6 @@ class _DifficultyFilterOptionsState extends State<DifficultyFilterOptions> {
         label,
         style: const TextStyle(
           fontSize: 18, // 기본 글자 크기
-          fontWeight: FontWeight.w600,
         ),
         maxLines: 1,
         // 텍스트를 한 줄로 제한
