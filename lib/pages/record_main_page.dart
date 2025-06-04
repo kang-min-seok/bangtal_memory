@@ -594,9 +594,11 @@ class _RecordMainPageState extends State<RecordMainPage> {
 
   Widget _buildListTile(EscapeRecord record) {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onLongPress: () {
         _showBottomSheetForRecord(record); // 꾹 눌렀을 때 BottomSheet 호출
       },
+      onTap: () => _showReviewDialog(record),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
         child: Row(
@@ -707,6 +709,132 @@ class _RecordMainPageState extends State<RecordMainPage> {
       ),
     );
   }
+
+  /// 후기 모달 ─────────────────────────────────────────────
+  void _showReviewDialog(EscapeRecord record) {
+    bool editing = false;
+    final ctrl = TextEditingController(text: record.review ?? '');
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black54,
+      builder: (ctx) => AnimatedPadding(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            left: 12, right: 12, top: 24),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+                minHeight: MediaQuery.of(ctx).size.height * .45,
+                maxHeight: MediaQuery.of(ctx).size.height * .5,
+                maxWidth : MediaQuery.of(ctx).size.width  * .9),
+            child: StatefulBuilder(
+              builder: (ctx, setState) {
+                final kbShown = MediaQuery.of(ctx).viewInsets.bottom > 0;
+
+                return Material(
+                  color: Theme.of(ctx).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        /* ───── 헤더 ───── */
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(record.themeName,
+                                      style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold),
+                                      overflow: TextOverflow.ellipsis),
+                                  const SizedBox(height: 4),
+                                  Text(record.storeName,
+                                      style: TextStyle(
+                                          fontSize: 14,
+                                          color: Theme.of(ctx)
+                                              .colorScheme.onSurfaceVariant)),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close_rounded),
+                              onPressed: () => Navigator.pop(ctx),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+
+                        /* ───── 본문 ───── */
+                        Expanded(                              // 버튼을 항상 아래로 밀어냄
+                          child: editing
+                              ? ConstrainedBox(                 // 편집 시 높이 제한
+                            constraints: BoxConstraints(
+                                maxHeight: kbShown
+                                    ? double.infinity       // 키보드가 있으면 마음껏
+                                    : 300),                 // 없으면 최대 300px
+                            child: TextField(
+                              controller: ctrl,
+                              maxLines: null,
+                              maxLength: 200,
+                              expands: true,
+                              textAlignVertical: TextAlignVertical.top,
+                              decoration: const InputDecoration(
+                                hintText: '후기를 입력하세요',
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          )
+                              : SingleChildScrollView(
+                            child: Text(
+                              (record.review ?? '').trim().isNotEmpty
+                                  ? record.review!
+                                  : '작성된 후기가 없습니다.',
+                              style: const TextStyle(fontSize: 18, height: 1.4),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        /* ───── 버튼 ───── */
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                                padding:
+                                const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(24))),
+                            child: Text(editing ? '수정 완료' : '수정하기'),
+                            onPressed: () async {
+                              if (editing) {
+                                record.review = ctrl.text.trim();
+                                await record.save();
+                              }
+                              setState(() => editing = !editing);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+
 
   void _showBottomSheetForRecord(EscapeRecord record) {
     showModalBottomSheet(

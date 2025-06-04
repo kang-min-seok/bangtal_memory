@@ -23,6 +23,7 @@ class _EditMainPageState extends State<EditMainPage> {
   late TextEditingController _storeNameController;
   late TextEditingController _regionController;
   late TextEditingController _dateController;
+  late TextEditingController _reviewController;
 
   // 상태
   bool isDateUnknown = false;
@@ -43,7 +44,7 @@ class _EditMainPageState extends State<EditMainPage> {
     _storeNameController = TextEditingController(text: widget.record.storeName);
     _regionController = TextEditingController(text: widget.record.region);
     _dateController = TextEditingController(text: widget.record.date);
-
+    _reviewController = TextEditingController(text: widget.record.review ?? '');
 
     String difficulty = widget.record.difficulty;
     double? ratingValue = double.tryParse(difficulty);
@@ -69,6 +70,7 @@ class _EditMainPageState extends State<EditMainPage> {
     _storeNameController.dispose();
     _regionController.dispose();
     _dateController.dispose();
+    _reviewController.dispose();
     super.dispose();
   }
 
@@ -188,6 +190,7 @@ class _EditMainPageState extends State<EditMainPage> {
     required String selectedSatisfaction,
     required String selectedDifficulty,
     required String date,
+    required String review,
   }) async {
     // Hive 박스 열기
     var box = await Hive.openBox<EscapeRecord>('escape_records');
@@ -210,6 +213,7 @@ class _EditMainPageState extends State<EditMainPage> {
       existingRecord.satisfaction = selectedSatisfaction;
       existingRecord.difficulty = selectedDifficulty;
       existingRecord.date = date;
+      existingRecord.review = review;
 
       // Hive 박스에 업데이트된 레코드를 저장 (put으로 덮어씀)
       await box.put(id, existingRecord);
@@ -469,18 +473,6 @@ class _EditMainPageState extends State<EditMainPage> {
                 ),
               ),
               SizedBox(height: 10.0),
-              // RatingBar(
-              //   maxRating: 5,
-              //   isHalfAllowed: true,
-              //   halfFilledIcon: Icons.star_half_rounded,
-              //   filledIcon: Icons.star_rounded,
-              //   emptyIcon: Icons.star_border_rounded,
-              //   onRatingChanged: (rating) {
-              //     _selectRating(rating.toString());
-              //   },
-              //   alignment: Alignment.center,
-              //   size: 58, // 별점 크기를 키움
-              // ),
               Row(
                   mainAxisSize: MainAxisSize.max,
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -503,6 +495,27 @@ class _EditMainPageState extends State<EditMainPage> {
                     ),
                   ]
               ),
+              SizedBox(height: 20.0),
+              Divider(
+                height: 5.0, // 나눔선의 높이를 설정
+                thickness: 5.0, // 나눔선의 두께를 설정
+                color: Theme.of(context).dividerColor, // 나눔선의 색상을 설정
+              ),
+              SizedBox(height: 20.0),
+
+
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: buildTextField(
+                    '후기',
+                    '자유롭게 작성해 주세요.',
+                    _reviewController,
+                    maxLines: 5,
+                    height: 120,
+                    showCounter: true
+                ),
+              ),
+
               SizedBox(height: 20.0),
               Divider(
                 height: 5.0, // 나눔선의 높이를 설정
@@ -598,6 +611,7 @@ class _EditMainPageState extends State<EditMainPage> {
                     selectedSatisfaction: selectedSatisfaction,
                     selectedDifficulty: realDifficulty,
                     date: date,
+                    review: _reviewController.text.trim(),
                   );
                   Navigator.pop(context, true);
                 },
@@ -631,34 +645,57 @@ class _EditMainPageState extends State<EditMainPage> {
   }
 
   Widget buildTextField(
-      String label, String hint, TextEditingController controller) {
+      String label,
+      String hint,
+      TextEditingController controller, {
+        int maxLines = 1,
+        double height = 48,
+        bool showCounter = false,
+      }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
           style: TextStyle(
-            fontSize: 16.0,
+            fontSize: 16,
             color: Theme.of(context).colorScheme.onBackground,
           ),
         ),
-        SizedBox(height: 8.0),
-        TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            contentPadding:
-            const EdgeInsets.symmetric(vertical: 7.0, horizontal: 10.0),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.surface,
-                width: 1.0,
+        const SizedBox(height: 8),
+        // ──────────────────────────────────────────
+        SizedBox(
+          height: height,               // ← 여기서 높이 적용
+          child: TextField(
+            controller: controller,
+            maxLines: maxLines,         // 1(기본) ~ 여러 줄
+            maxLength: 200,
+            buildCounter: showCounter
+                ? null                           // 기본 0/200 카운터 사용
+                : (_, {required int currentLength,
+              required int? maxLength,
+              required bool isFocused}) => const SizedBox.shrink(),
+            decoration: InputDecoration(
+              isDense: true,            // 높이를 깔끔하게 만들기 위해
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: 12,           // 내부 여백(추가로 높이 조정 가능)
+                horizontal: 10,
               ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.surface,
+                  width: 1,
+                ),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              hintText: hint,
             ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            hintText: hint,
           ),
         ),
+        // ──────────────────────────────────────────
       ],
     );
   }

@@ -44,8 +44,10 @@ class _RegionFilterOptionsState extends State<RegionFilterOptions> {
           return const Center(child: Text('오류가 발생했습니다.'));
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return SafeArea(
+              bottom: false,
               child: Container(
-                padding: const EdgeInsets.all(16.0),
+                padding: EdgeInsets.fromLTRB(
+                    16, 16, 16, 30),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.background,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -74,6 +76,7 @@ class _RegionFilterOptionsState extends State<RegionFilterOptions> {
               return WillPopScope(
                   onWillPop: _onWillPop,
                   child: SafeArea(
+                      bottom: false,
                       child: Container(
                         padding: const EdgeInsets.all(16.0),
                         decoration: BoxDecoration(

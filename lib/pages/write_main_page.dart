@@ -21,6 +21,7 @@ class _WriteMainPageState extends State<WriteMainPage> {
   final TextEditingController _storeNameController = TextEditingController();
   final TextEditingController _regionController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
+  final TextEditingController _reviewController  = TextEditingController();
 
   // 날짜 아는지 모르는지 상태
   bool isDateUnknown = false;
@@ -43,6 +44,7 @@ class _WriteMainPageState extends State<WriteMainPage> {
     _storeNameController.dispose();
     _regionController.dispose();
     _dateController.dispose();
+    _reviewController.dispose();
     super.dispose();
   }
 
@@ -175,6 +177,7 @@ class _WriteMainPageState extends State<WriteMainPage> {
     required String selectedSatisfaction,
     required String selectedDifficulty,
     required String date,
+    required String review,
   }) async {
     var box = await Hive.openBox<EscapeRecord>('escape_records');
     int id = await _getNextId(); // 고유 ID를 가져옴
@@ -193,6 +196,7 @@ class _WriteMainPageState extends State<WriteMainPage> {
       satisfaction: selectedSatisfaction,
       genre: selectedGenre,
       region: region,
+      review: review,
     );
 
     await box.put(id, record); // 고유한 ID로 저장
@@ -477,6 +481,26 @@ class _WriteMainPageState extends State<WriteMainPage> {
                 color: Theme.of(context).dividerColor, // 나눔선의 색상을 설정
               ),
               SizedBox(height: 20.0),
+
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: buildTextField(
+                  '후기',
+                  '자유롭게 작성해 주세요.',
+                  _reviewController,
+                  maxLines: 5,
+                  height: 120,
+                  showCounter: true
+                ),
+              ),
+
+              SizedBox(height: 20.0),
+              Divider(
+                height: 5.0, // 나눔선의 높이를 설정
+                thickness: 5.0, // 나눔선의 두께를 설정
+                color: Theme.of(context).dividerColor, // 나눔선의 색상을 설정
+              ),
+              SizedBox(height: 20.0),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10.0),
                 child: Column(
@@ -564,6 +588,7 @@ class _WriteMainPageState extends State<WriteMainPage> {
                     selectedSatisfaction: selectedSatisfaction,
                     selectedDifficulty: realDifficulty,
                     date: date,
+                    review: _reviewController.text.trim(),
                   );
                   Navigator.pop(context, true);
                 },
@@ -597,34 +622,57 @@ class _WriteMainPageState extends State<WriteMainPage> {
   }
 
   Widget buildTextField(
-      String label, String hint, TextEditingController controller) {
+      String label,
+      String hint,
+      TextEditingController controller, {
+        int maxLines = 1,
+        double height = 48,
+        bool showCounter = false,
+      }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
           style: TextStyle(
-            fontSize: 16.0,
+            fontSize: 16,
             color: Theme.of(context).colorScheme.onBackground,
           ),
         ),
-        SizedBox(height: 8.0),
-        TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            contentPadding:
-                const EdgeInsets.symmetric(vertical: 7.0, horizontal: 10.0),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.surface,
-                width: 1.0,
+        const SizedBox(height: 8),
+        // ──────────────────────────────────────────
+        SizedBox(
+          height: height,               // ← 여기서 높이 적용
+          child: TextField(
+            controller: controller,
+            maxLines: maxLines,         // 1(기본) ~ 여러 줄
+            maxLength: 200,
+            buildCounter: showCounter
+                ? null                           // 기본 0/200 카운터 사용
+                : (_, {required int currentLength,
+              required int? maxLength,
+              required bool isFocused}) => const SizedBox.shrink(),
+            decoration: InputDecoration(
+              isDense: true,            // 높이를 깔끔하게 만들기 위해
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: 12,           // 내부 여백(추가로 높이 조정 가능)
+                horizontal: 10,
               ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.surface,
+                  width: 1,
+                ),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              hintText: hint,
             ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            hintText: hint,
           ),
         ),
+        // ──────────────────────────────────────────
       ],
     );
   }
@@ -646,4 +694,6 @@ class _WriteMainPageState extends State<WriteMainPage> {
       child: Text(difficulty),
     ));
   }
+
+
 }

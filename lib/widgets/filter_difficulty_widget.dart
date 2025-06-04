@@ -29,6 +29,7 @@ class _DifficultyFilterOptionsState extends State<DifficultyFilterOptions> {
     return WillPopScope(
         onWillPop: _onWillPop,
         child: SafeArea(
+            bottom: false,
             child: Container(
               padding: const EdgeInsets.all(16.0),
               decoration: BoxDecoration(
