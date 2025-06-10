@@ -225,19 +225,21 @@ class _DateFilterOptionsState extends State<DateFilterOptions> {
                     const Text('날짜 모름 미포함'),
                   ],
                 ),
-                const SizedBox(height: 24.0),
-                SizedBox(
-                  width: double.infinity, // 버튼의 너비를 부모 위젯의 최대 너비로 설정
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // 선택된 날짜 범위 및 날짜 모름 체크 처리
-                      Navigator.pop(context, {
-                        'startDate': startDate,
-                        'endDate': endDate,
-                        'isDateUnknown': isDateUnknown,
-                      });
-                    },
-                    child: const Text('선택 완료'),
+                SafeArea(
+                  top: false,               // 상단 여백은 필요 없음
+                  minimum: const EdgeInsets.only(bottom: 16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context, {
+                          'startDate': startDate,
+                          'endDate': endDate,
+                          'isDateUnknown': isDateUnknown,
+                        });
+                      },
+                      child: const Text('선택 완료'),
+                    ),
                   ),
                 ),
               ],

@@ -168,20 +168,25 @@ class _DifficultyFilterOptionsState extends State<DifficultyFilterOptions> {
                     ],
                   ),
                   const SizedBox(height: 24.0),
-                  SizedBox(
-                    width: double.infinity, // 버튼의 너비를 부모 위젯의 최대 너비로 설정
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // 선택된 난이도와 별점 범위를 처리하는 로직 추가
-                        Navigator.pop(context, {
-                          'difficulties': selectedDifficulties,
-                          'minRating': minRating,
-                          'maxRating': maxRating,
-                        });
-                      },
-                      child: const Text('선택 완료'),
+                  SafeArea(
+                    top: false,               // 상단 여백은 필요 없음
+                    minimum: const EdgeInsets.only(bottom: 16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // 선택된 난이도와 별점 범위를 처리하는 로직 추가
+                          Navigator.pop(context, {
+                            'difficulties': selectedDifficulties,
+                            'minRating': minRating,
+                            'maxRating': maxRating,
+                          });
+                        },
+                        child: const Text('선택 완료'),
+                      ),
                     ),
                   ),
+
                 ],
               ),
             )

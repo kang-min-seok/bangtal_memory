@@ -81,15 +81,19 @@ class _SatisfactionFilterOptionsState extends State<SatisfactionFilterOptions> {
                     }).toList(),
                   ),
                   const SizedBox(height: 24.0),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context, {
-                          'selectedSatisfactions': selectedSatisfactions,
-                        });
-                      },
-                      child: const Text('선택 완료'),
+                  SafeArea(
+                    top: false,               // 상단 여백은 필요 없음
+                    minimum: const EdgeInsets.only(bottom: 16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context, {
+                            'selectedSatisfactions': selectedSatisfactions,
+                          });
+                        },
+                        child: const Text('선택 완료'),
+                      ),
                     ),
                   ),
                 ],

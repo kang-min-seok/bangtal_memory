@@ -135,7 +135,7 @@ class _GenreAddPageState extends State<GenreAddPage> {
                     await GenreService.addGenre(name, _selectedColor);
                     if (context.mounted) Navigator.pop(context);
                   },
-                  child: const Text('카테고리 생성', style: TextStyle( fontWeight: FontWeight.bold)),
+                  child: const Text('장르 생성', style: TextStyle( fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
