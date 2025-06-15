@@ -26,13 +26,14 @@ class EscapeRecordAdapter extends TypeAdapter<EscapeRecord> {
       genre: fields[6] as String,
       region: fields[7] as String,
       review: fields[8] as String?,
+      imagePaths: (fields[9] as List?)?.cast<String>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, EscapeRecord obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(10)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -50,7 +51,9 @@ class EscapeRecordAdapter extends TypeAdapter<EscapeRecord> {
       ..writeByte(7)
       ..write(obj.region)
       ..writeByte(8)
-      ..write(obj.review);
+      ..write(obj.review)
+      ..writeByte(9)
+      ..write(obj.imagePaths);
   }
 
   @override

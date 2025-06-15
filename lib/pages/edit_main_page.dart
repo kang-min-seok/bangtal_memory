@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:bangtal_memory/pages/write_search_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -5,8 +7,13 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:hive/hive.dart';
 import 'package:bangtal_memory/constants/constants.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../hive/escape_record.dart';
 import '../hive/genre_list.dart';
+import 'genre_manage_page.dart';
 
 class EditMainPage extends StatefulWidget {
   final EscapeRecord record; // record를 받아옴
@@ -33,11 +40,16 @@ class _EditMainPageState extends State<EditMainPage> {
   String selectedGenre = "";
   String selectedSatisfaction = "";
 
+  final List<String> _pickedImagePaths = [];
+  final ImagePicker _picker = ImagePicker();
+
   @override
   void initState() {
     super.initState();
 
     _genreBox = Hive.box<GenreList>('genreLists');
+
+    _pickedImagePaths.addAll(widget.record.imagePaths ?? []);
 
     // 전달받은 데이터를 컨트롤러에 초기화
     _themeNameController = TextEditingController(text: widget.record.themeName);
@@ -181,6 +193,47 @@ class _EditMainPageState extends State<EditMainPage> {
   }
 
 
+  Future<void> _pickImages() async {
+    // Android 권한
+    if (Platform.isAndroid) {
+      if (!await _requestMediaPermissions()) {
+        // 사용자가 ‘거부’를 택한 경우 (필요하면 안내만)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('권한이 필요합니다')));
+        return;
+      }
+    }
+
+    final files = await _picker.pickMultiImage(imageQuality: 85);
+    if (files.isEmpty) return;
+
+    // 앱 전용 디렉터리에 복사해 두면 추후 안전(삭제·권한 문제 예방)
+    final appDir = await getApplicationDocumentsDirectory();
+
+    for (final f in files) {
+      final ext  = f.path.split('.').last;
+      final name = '${DateTime.now().millisecondsSinceEpoch}.$ext';
+      final copy = await File(f.path).copy('${appDir.path}/$name');
+      _pickedImagePaths.add(copy.path);
+    }
+
+    widget.record.imagePaths = _pickedImagePaths;
+
+    setState(() {});       // 썸네일 새로고침
+  }
+
+  Future<bool> _requestMediaPermissions() async {
+    // Android 33+ : READ_MEDIA_IMAGES │ 이하 : READ_EXTERNAL_STORAGE
+    final sdk  = (await DeviceInfoPlugin().androidInfo).version.sdkInt;
+    final read = sdk >= 33 ? Permission.photos : Permission.storage;
+
+    // 여러 권한 한꺼번에 요청
+    final statuses = await [read].request();
+
+    // 두 권한 모두 ‘허용’이어야 true
+    return statuses[read]!.isGranted;
+  }
+
   Future<void> updateEscapeRecord({
     required int id, // 기존 레코드의 ID를 받음
     required String themeName,
@@ -214,6 +267,7 @@ class _EditMainPageState extends State<EditMainPage> {
       existingRecord.difficulty = selectedDifficulty;
       existingRecord.date = date;
       existingRecord.review = review;
+      existingRecord.imagePaths  = _pickedImagePaths;
 
       // Hive 박스에 업데이트된 레코드를 저장 (put으로 덮어씀)
       await box.put(id, existingRecord);
@@ -331,12 +385,39 @@ class _EditMainPageState extends State<EditMainPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '장르',
-                        textAlign: TextAlign.start,
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          color: Theme.of(context).colorScheme.onBackground,
+                      Padding(
+                        padding: EdgeInsets.only(right: 10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '장르',
+                              textAlign: TextAlign.start,
+                              style: TextStyle(
+                                fontSize: 16.0,
+                                color: Theme.of(context).colorScheme.onBackground,
+                              ),
+                            ),
+                            TextButton(
+                              style: TextButton.styleFrom(
+                                foregroundColor: Theme.of(context).colorScheme.primary, // 글자색 = primary
+                                padding: EdgeInsets.zero,              // 불필요한 여백 최소화 (선택)
+                                minimumSize: Size(0, 0),               // splash 영역 축소 (선택)
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              onPressed: () async {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const GenreManagePage()),
+                                );
+                                setState(() {});   // 변경사항 반영
+                              },
+                              child: const Text('편집',
+                                style: TextStyle(
+                                  fontSize: 16.0,
+                                ),),
+                            ),
+                          ],
                         ),
                       ),
                       SizedBox(height: 10.0),
@@ -523,6 +604,83 @@ class _EditMainPageState extends State<EditMainPage> {
                 color: Theme.of(context).dividerColor, // 나눔선의 색상을 설정
               ),
               SizedBox(height: 20.0),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('사진', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                    const SizedBox(height: 10),
+
+                    Wrap(
+                      spacing: 8, runSpacing: 8,
+                      children: [
+                        // ── 현재 이미지들
+                        ..._pickedImagePaths.map((p) => Stack(
+                          clipBehavior: Clip.none,                    // 아이콘 잘림 방지
+                          alignment: Alignment.topRight,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.file(
+                                File(p),
+                                width: 72, height: 72, fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) =>
+                                    Container(
+                                      width: 72,
+                                      height: 72,
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).colorScheme.surfaceVariant,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(Icons.broken_image_rounded,
+                                          color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                    ),
+                              ),
+                            ),
+                            Positioned(
+                              top: -6, right: -6,
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() => _pickedImagePaths.remove(p));
+                                  File(p).delete().catchError((_) {});
+                                  widget.record
+                                    ..imagePaths = _pickedImagePaths
+                                    ..save();
+                                },
+                                child: const CircleAvatar(
+                                  radius: 11,
+                                  backgroundColor: Colors.black54,
+                                  child: Icon(Icons.close, size: 12, color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )),
+
+                        // ──  “+” 버튼
+                        GestureDetector(
+                          onTap: _pickImages,
+                          child: Container(
+                            width: 72, height: 72,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surfaceVariant,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(Icons.add_a_photo_rounded,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Divider(height: 5, thickness: 5, color: Theme.of(context).dividerColor),
+
+              const SizedBox(height: 20),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10.0),
                 child: Column(

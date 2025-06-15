@@ -79,6 +79,8 @@ class _SettingMainPageState extends State<SettingMainPage> {
         content: Text('방탈출 기록이 초기화되었습니다.'),
       ),
     );
+
+    Navigator.pop(context, true);
   }
 
   // 크롤링 후 데이터를 Hive에 덮어씌우는 함수
@@ -180,6 +182,7 @@ class _SettingMainPageState extends State<SettingMainPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        scrolledUnderElevation: 0,
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.background,
         title: Text("설정"),
@@ -227,14 +230,16 @@ class _SettingMainPageState extends State<SettingMainPage> {
                   _CustomListTile(
                     title: "qr로 가져오기",
                     icon: Icons.qr_code_scanner_rounded,
-                    onTap: (){
+                    onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const QrImportPage()),
-                      ).then((_) {
-                        getThemeText();
+                        MaterialPageRoute(builder: (_) => const QrImportPage()),
+                      ).then((qrResult) {
+                        if (qrResult == true) {
+                          Navigator.pop(context, true);          // ← 메인으로 전달
+                        }
                       });
-                    },
+                    }
                   ),
                   _CustomListTile(
                     title: "방탈출 기록 초기화",

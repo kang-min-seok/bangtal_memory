@@ -1,13 +1,19 @@
 // 패키지
+import 'dart:io';
+
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:bangtal_memory/pages/record_calendar_page.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 // 값
 import 'package:bangtal_memory/constants/constants.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import '../hive/escape_record.dart';
 
 // 페이지
@@ -233,14 +239,13 @@ class _RecordMainPageState extends State<RecordMainPage> {
                                             IconButton(
                                               icon: const Icon(Icons.settings),
                                               onPressed: () {
-                                                setState(() {
-                                                  Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          const SettingMainPage(),
-                                                    ),
-                                                  );
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(builder: (_) => const SettingMainPage()),
+                                                ).then((settingResult) {
+                                                  if (settingResult == true) {
+                                                    _loadRecords();
+                                                  }
                                                 });
                                               },
                                             ),
@@ -710,123 +715,240 @@ class _RecordMainPageState extends State<RecordMainPage> {
     );
   }
 
+
+  Future<bool> _requestMediaPermissions() async {
+    // Android 33+ : READ_MEDIA_IMAGES │ 이하 : READ_EXTERNAL_STORAGE
+    final sdk  = (await DeviceInfoPlugin().androidInfo).version.sdkInt;
+    final read = sdk >= 33 ? Permission.photos : Permission.storage;
+
+    // 여러 권한 한꺼번에 요청
+    final statuses = await [read].request();
+
+    // 두 권한 모두 ‘허용’이어야 true
+    return statuses[read]!.isGranted;
+  }
+
   /// 후기 모달 ─────────────────────────────────────────────
   void _showReviewDialog(EscapeRecord record) {
-    bool editing = false;
-    final ctrl = TextEditingController(text: record.review ?? '');
+    final ctrl         = TextEditingController(text: record.review ?? '');
+    final imagePaths = List<String>.from(record.imagePaths ?? []);
+    final pageCtrl     = PageController();
+    bool  editing      = false;                     // 텍스트 수정 중?
+    print(record.toString());
+
+    Future<void> _addImages(StateSetter refresh) async {
+      // ── 권한 (Android 13 / ≤12) ────────────────────
+      if (Platform.isAndroid) {
+        if (!await _requestMediaPermissions()) {
+          // 사용자가 ‘거부’를 택한 경우 (필요하면 안내만)
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text('권한이 필요합니다')));
+          return;
+        }
+      }
+      // iOS ▸ PH-Picker : 별도 권한 필요 없음
+
+      // ── 갤러리 선택 ──────────────────────────────
+      final files = await ImagePicker().pickMultiImage(imageQuality: 85) ?? [];
+      if (files.isEmpty) return;
+
+      imagePaths
+        ..clear()
+        ..addAll(files.map((e) => e.path));
+
+      record.imagePaths = imagePaths;   // ← 모델에 반영
+      await record.save();              // ← 디스크에 반영
+
+      refresh(() {});                               // PageView 갱신
+    }
 
     showDialog(
       context: context,
       barrierColor: Colors.black54,
-      builder: (ctx) => AnimatedPadding(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-        padding: EdgeInsets.only(
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => AnimatedPadding(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.only(
+            left: 12, right: 12, top: 24,
             bottom: MediaQuery.of(ctx).viewInsets.bottom,
-            left: 12, right: 12, top: 24),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-                minHeight: MediaQuery.of(ctx).size.height * .45,
-                maxHeight: MediaQuery.of(ctx).size.height * .5,
-                maxWidth : MediaQuery.of(ctx).size.width  * .9),
-            child: StatefulBuilder(
-              builder: (ctx, setState) {
-                final kbShown = MediaQuery.of(ctx).viewInsets.bottom > 0;
-
-                return Material(
-                  color: Theme.of(ctx).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        /* ───── 헤더 ───── */
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(record.themeName,
-                                      style: const TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold),
-                                      overflow: TextOverflow.ellipsis),
-                                  const SizedBox(height: 4),
-                                  Text(record.storeName,
-                                      style: TextStyle(
-                                          fontSize: 14,
-                                          color: Theme.of(ctx)
-                                              .colorScheme.onSurfaceVariant)),
-                                ],
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.close_rounded),
-                              onPressed: () => Navigator.pop(ctx),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-
-                        /* ───── 본문 ───── */
-                        Expanded(                              // 버튼을 항상 아래로 밀어냄
-                          child: editing
-                              ? ConstrainedBox(                 // 편집 시 높이 제한
-                            constraints: BoxConstraints(
-                                maxHeight: kbShown
-                                    ? double.infinity       // 키보드가 있으면 마음껏
-                                    : 300),                 // 없으면 최대 300px
-                            child: TextField(
-                              controller: ctrl,
-                              maxLines: null,
-                              maxLength: 200,
-                              expands: true,
-                              textAlignVertical: TextAlignVertical.top,
-                              decoration: const InputDecoration(
-                                hintText: '후기를 입력하세요',
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                          )
-                              : SingleChildScrollView(
-                            child: Text(
-                              (record.review ?? '').trim().isNotEmpty
-                                  ? record.review!
-                                  : '작성된 후기가 없습니다.',
-                              style: const TextStyle(fontSize: 18, height: 1.4),
+          ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth : MediaQuery.of(ctx).size.width  * .90,
+                maxHeight: MediaQuery.of(ctx).size.height * .6,
+              ),
+              child: Material(
+                color: Theme.of(ctx).colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                  child: Column(
+                    children: [
+                      // ───────── 헤더 ─────────
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(record.themeName,
+                                    style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold),
+                                    overflow: TextOverflow.ellipsis),
+                                const SizedBox(height: 4),
+                                Text(record.storeName,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Theme.of(ctx)
+                                          .colorScheme.onSurfaceVariant,
+                                    )),
+                              ],
                             ),
                           ),
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded),
+                            onPressed: () => Navigator.pop(ctx),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // ───────── PageView ─────────
+                      Expanded(
+                        child: PageView.builder(
+                          controller: pageCtrl,
+                          allowImplicitScrolling: true,
+                          itemCount: 1 +                 // 후기 페이지
+                              (imagePaths.isEmpty ? 1              // “이미지 없음”
+                                  : imagePaths.length),
+                          itemBuilder: (_, index) {
+                            if (index == 0) {
+                              // ── 후기 페이지 ──
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 4),
+                                child: editing
+                                    ? TextField(
+                                  controller: ctrl,
+                                  maxLength: 200,
+                                  maxLines: null,
+                                  expands: true,
+                                  textAlignVertical: TextAlignVertical.top,
+                                  decoration: const InputDecoration(
+                                    hintText: '후기를 입력하세요',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                )
+                                    : (() {
+                                  final hasReview = (record.review ?? '').trim().isNotEmpty;
+
+                                  // ① 후기 O  → 위쪽에서 살짝 더 내려오도록 여유를 준다.
+                                  if (hasReview) {
+                                    return SingleChildScrollView(
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(top: 20),   // ← marginTop 여유
+                                        child: Text(
+                                          record.review!,
+                                          style: const TextStyle(fontSize: 18, height: 1.4),
+                                        ),
+                                      ),
+                                    );
+                                  }
+
+                                  // ② 후기 X  → 안내 문구를 화면 **정중앙**에 배치
+                                  return const Center(
+                                    child: Text(
+                                      '작성된 후기가 없습니다.',
+                                      style: TextStyle(fontSize: 18,),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  );
+                                })(),
+                              );
+                            }
+
+                            // ── 이미지 페이지들 ──
+                            final realIdx = index - 1;
+                            if (imagePaths.isEmpty) {
+                              return const Center(
+                                child: Text(
+                                  '선택된 이미지가 없습니다.',
+                                    style: TextStyle(fontSize: 18,),
+                                    textAlign: TextAlign.center,
+                                ),
+                              );
+                            }
+
+                            return Padding(
+                              padding: const EdgeInsets.all(4),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.file(
+                                  File(imagePaths[realIdx]),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) =>
+                                  const Icon(Icons.broken_image_rounded),
+                                ),
+                              ),
+                            );
+                          },
                         ),
+                      ),
 
-                        const SizedBox(height: 24),
+                      const SizedBox(height: 12),
 
-                        /* ───── 버튼 ───── */
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                                padding:
-                                const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(24))),
-                            child: Text(editing ? '수정 완료' : '수정하기'),
-                            onPressed: () async {
-                              if (editing) {
-                                record.review = ctrl.text.trim();
-                                await record.save();
+                      // ───────── Indicator ─────────
+                      SmoothPageIndicator(
+                        controller: pageCtrl,
+                        count: 1 + (imagePaths.isEmpty ? 1 : imagePaths.length),
+                        effect: WormEffect(
+                          dotHeight: 8,
+                          dotWidth : 8,
+                          activeDotColor:
+                          Theme.of(ctx).colorScheme.primary,
+                          spacing: 6,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // ───────── 버튼 ─────────
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                          ),
+                          child: Text(editing ? '수정 완료' : '수정하기'),
+                          onPressed: () async {
+                            final curPage = pageCtrl.page?.round() ?? 0;
+
+                            if (!editing) {
+                              // ▶︎ ‘수정하기’ 클릭
+                              if (curPage == 0) {
+                                // ➊ 후기 페이지 → 텍스트 편집 모드
+                                setModalState(() => editing = true);
+                              } else {
+                                // ➋ 이미지 페이지 → 이미지 추가(또는 삭제 로직)
+                                await _addImages(setModalState);
                               }
-                              setState(() => editing = !editing);
-                            },
-                          ),
+                            } else {
+                              // ▶︎ ‘수정 완료’ 클릭
+                              record.review = ctrl.text.trim();
+                              await record.save();
+                              setModalState(() => editing = false);
+                            }
+                          },
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                );
-              },
+                ),
+              ),
             ),
           ),
         ),

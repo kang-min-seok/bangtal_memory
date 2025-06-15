@@ -15,6 +15,7 @@ class _SettingThemePageState extends State<SettingThemePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        scrolledUnderElevation: 0,
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.background,
         title: Text("테마 설정"),

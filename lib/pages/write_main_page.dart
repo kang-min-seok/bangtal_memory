@@ -1,12 +1,19 @@
+import 'dart:io';
+
 import 'package:bangtal_memory/pages/write_search_page.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:hive/hive.dart';
 import 'package:bangtal_memory/constants/constants.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../hive/escape_record.dart';
 import '../hive/genre_list.dart';
+import 'genre_manage_page.dart';
 
 class WriteMainPage extends StatefulWidget {
   const WriteMainPage({super.key});
@@ -31,6 +38,10 @@ class _WriteMainPageState extends State<WriteMainPage> {
   // 별점 선택 상태
   String selectedRating="0";
   String realDifficulty="";
+
+
+  final List<String> _pickedImagePaths = [];
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -161,12 +172,48 @@ class _WriteMainPageState extends State<WriteMainPage> {
     }
   }
 
+  Future<void> _pickImages() async {
+    if (Platform.isAndroid) {
+      if (!await _requestMediaPermissions()) {
+        // 사용자가 ‘거부’를 택한 경우 (필요하면 안내만)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('권한이 필요합니다')));
+        return;
+      }
+    }
+
+    final files = await _picker.pickMultiImage(imageQuality: 85);
+    if (files.isEmpty) return;
+
+    final appDir = await getApplicationDocumentsDirectory();
+
+
+    for (final f in files) {
+      final ext  = f.path.split('.').last;
+      final name = '${DateTime.now().millisecondsSinceEpoch}.$ext';
+      final copy = await File(f.path).copy('${appDir.path}/$name');
+      _pickedImagePaths.add(copy.path);
+    }
+    setState(() {});                         // 썸네일 새로고침
+  }
 
   Future<int> _getNextId() async {
     var idBox = await Hive.openBox<int>('id_counter');
     int currentId = idBox.get('current_id', defaultValue: 0) as int;
     await idBox.put('current_id', currentId + 1);
     return currentId + 1;
+  }
+
+  Future<bool> _requestMediaPermissions() async {
+    // Android 33+ : READ_MEDIA_IMAGES │ 이하 : READ_EXTERNAL_STORAGE
+    final sdk  = (await DeviceInfoPlugin().androidInfo).version.sdkInt;
+    final read = sdk >= 33 ? Permission.photos : Permission.storage;
+
+    // 여러 권한 한꺼번에 요청
+    final statuses = await [read].request();
+
+    // 두 권한 모두 ‘허용’이어야 true
+    return statuses[read]!.isGranted;
   }
 
   Future<void> saveEscapeRecord({
@@ -178,6 +225,7 @@ class _WriteMainPageState extends State<WriteMainPage> {
     required String selectedDifficulty,
     required String date,
     required String review,
+    required List<String> imagePaths,
   }) async {
     var box = await Hive.openBox<EscapeRecord>('escape_records');
     int id = await _getNextId(); // 고유 ID를 가져옴
@@ -197,6 +245,7 @@ class _WriteMainPageState extends State<WriteMainPage> {
       genre: selectedGenre,
       region: region,
       review: review,
+      imagePaths: imagePaths,
     );
 
     await box.put(id, record); // 고유한 ID로 저장
@@ -311,14 +360,43 @@ class _WriteMainPageState extends State<WriteMainPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '장르',
-                        textAlign: TextAlign.start,
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          color: Theme.of(context).colorScheme.onBackground,
-                        ),
+                      Padding(
+                          padding: EdgeInsets.only(right: 10),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '장르',
+                                textAlign: TextAlign.start,
+                                style: TextStyle(
+                                  fontSize: 16.0,
+                                  color: Theme.of(context).colorScheme.onBackground,
+                                ),
+                              ),
+                              TextButton(
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Theme.of(context).colorScheme.primary, // 글자색 = primary
+                                  padding: EdgeInsets.zero,              // 불필요한 여백 최소화 (선택)
+                                  minimumSize: Size(0, 0),               // splash 영역 축소 (선택)
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                onPressed: () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => const GenreManagePage()),
+                                  );
+                                  setState(() {});   // 변경사항 반영
+                                },
+                                child: const Text('편집',
+                                  style: TextStyle(
+                                    fontSize: 16.0,
+                                  ),),
+                              ),
+                            ],
+                          ),
                       ),
+
+
                       SizedBox(height: 10.0),
                       Wrap(
                         spacing: 8.0,
@@ -501,6 +579,89 @@ class _WriteMainPageState extends State<WriteMainPage> {
                 color: Theme.of(context).dividerColor, // 나눔선의 색상을 설정
               ),
               SizedBox(height: 20.0),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('사진',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                    const SizedBox(height: 10),
+
+                    // ② 썸네일 + 추가 버튼 그리드
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        // ── 기존에 고른 사진들
+                        ..._pickedImagePaths.map((p) => Stack(
+                          clipBehavior: Clip.none,
+                          alignment: Alignment.topRight,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.file(
+                                File(p),
+                                width: 72,
+                                height: 72,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) =>
+                                    Container(
+                                      width: 72,
+                                      height: 72,
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).colorScheme.surfaceVariant,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(Icons.broken_image_rounded,
+                                          color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                    ),
+                              ),
+                            ),
+                            // (선택적) 삭제 아이콘
+                            Positioned(
+                              top: -6,
+                              right: -6,
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() => _pickedImagePaths.remove(p));
+                                  File(p).delete().catchError((_) {}); // 실제 파일도 제거
+                                },
+                                child: const CircleAvatar(
+                                  radius: 11,
+                                  backgroundColor: Colors.black54,
+                                  child:
+                                  Icon(Icons.close, size: 12, color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )),
+
+                        // ── “+” 버튼 (마지막에)
+                        GestureDetector(
+                          onTap: _pickImages,
+                          child: Container(
+                            width: 72,
+                            height: 72,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surfaceVariant,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(Icons.add_a_photo_rounded,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Divider(height: 5, thickness: 5, color: Theme.of(context).dividerColor),
+              const SizedBox(height: 20),
+
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10.0),
                 child: Column(
@@ -589,6 +750,7 @@ class _WriteMainPageState extends State<WriteMainPage> {
                     selectedDifficulty: realDifficulty,
                     date: date,
                     review: _reviewController.text.trim(),
+                    imagePaths: _pickedImagePaths,
                   );
                   Navigator.pop(context, true);
                 },

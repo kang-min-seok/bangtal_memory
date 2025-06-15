@@ -20,6 +20,10 @@
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>앨범에서 이미지를 선택하기 위해 필요합니다.</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>후기에 첨부할 이미지를 저장하기 위해 필요합니다.</string>
 	<key>NSCameraUsageDescription</key>
     <string>QR 코드를 스캔하려면 카메라 접근이 필요합니다.</string>
 	<key>CFBundleVersion</key>

@@ -150,6 +150,8 @@ class _QrExportPageState extends State<QrExportPage> {
         'satisfaction': r.satisfaction,
         'genre': r.genre,
         'region': r.region,
+        'review'      : r.review ?? '',
+        'imagePaths'  : <String>[],
       }).toList(),
       'genres': genreBox.values.map((g) => {
         'id': g.id,

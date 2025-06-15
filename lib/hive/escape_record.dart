@@ -31,6 +31,9 @@ class EscapeRecord extends HiveObject {
   @HiveField(8)
   String? review;
 
+  @HiveField(9)
+  List<String>? imagePaths;
+
   EscapeRecord({
     required this.id,
     required this.date,
@@ -41,12 +44,14 @@ class EscapeRecord extends HiveObject {
     required this.genre,
     required this.region,
     this.review,
-  });
+    List<String>? imagePaths,
+  }): imagePaths = imagePaths ?? [];
 
+  List<String> get safeImages => imagePaths ?? [];
   String get safeReview => review ?? '';
 
   @override
   String toString() {
-    return 'EscapeRecord(id: $id, date: $date, storeName: $storeName, themeName: $themeName, difficulty: $difficulty, satisfaction: $satisfaction, genre: $genre, region: $region, review:$review)';
+    return 'EscapeRecord(id: $id, date: $date, storeName: $storeName, themeName: $themeName, difficulty: $difficulty, satisfaction: $satisfaction, genre: $genre, region: $region, review:$review, imagePaths:$imagePaths)';
   }
 }
